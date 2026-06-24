@@ -11,6 +11,13 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.vscode/
+
+# Firebase
+lib/firebase_options.dart
+
+# Dart defines (never commit API keys)
+*.env
 
 # IntelliJ related
 *.iml
