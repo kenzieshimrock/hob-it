@@ -40,19 +40,19 @@ class DiscoveryView extends StatelessWidget {
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0A1530),
+      child: const Scaffold(
+        backgroundColor: Color(0xFF0A1530),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Header(),
-                const SizedBox(height: 40),
-                const _HobbyInputField(),
-                const SizedBox(height: 24),
-                const _SubmitButton(),
+                _Header(),
+                SizedBox(height: 40),
+                _HobbyInputField(),
+                SizedBox(height: 24),
+                _SubmitButton(),
               ],
             ),
           ),
@@ -147,7 +147,7 @@ class _SubmitButton extends StatelessWidget {
                   strokeWidth: 2,
                 ),
               )
-            : const Text('Let\'s go'),
+            : const Text("Let's go"),
       ),
     );
   }

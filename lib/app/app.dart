@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hob_it/features/discovery/view/discovery_page.dart';
 
+/// {@template app}
+/// The root widget of the hob-it application.
+/// {@endtemplate}
 class App extends StatelessWidget {
+  /// {@macro app}
   const App({super.key});
 
   @override
@@ -14,7 +18,7 @@ class App extends StatelessWidget {
         fontFamily: 'Poppins',
         useMaterial3: true,
       ),
-      home: DiscoveryPage(),
+      home: const DiscoveryPage(),
     );
   }
 }
