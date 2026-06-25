@@ -1,7 +1,7 @@
-part of 'onboarding_bloc.dart';
+part of 'discovery_bloc.dart';
 
 /// Describes the current phase of an onboarding agent request.
-enum OnboardingStatus {
+enum DiscoveryStatus {
   /// No request has been made yet.
   initial,
 
@@ -18,26 +18,26 @@ enum OnboardingStatus {
 /// Represents the state of the onboarding flow.
 ///
 /// Immutable. All state transitions are produced via [copyWith].
-final class OnboardingState extends Equatable {
-  /// Creates an [OnboardingState].
+final class DiscoveryState extends Equatable {
+  /// Creates an [DiscoveryState].
   ///
-  /// Defaults to [OnboardingStatus.initial] with an empty [hobbyInput].
-  const OnboardingState({
-    this.status = OnboardingStatus.initial,
+  /// Defaults to [DiscoveryStatus.initial] with an empty [hobbyInput].
+  const DiscoveryState({
+    this.status = DiscoveryStatus.initial,
     this.hobbyInput = '',
   });
 
   /// The current phase of the onboarding agent request.
-  final OnboardingStatus status;
+  final DiscoveryStatus status;
 
   /// The hobby description entered by the user.
   ///
-  /// This value is sent to the Gemini agent on [OnboardingSubmitted].
+  /// This value is sent to the Gemini agent on [DiscoverySubmitted].
   final String hobbyInput;
 
   /// Returns a copy of this state with the given fields replaced.
-  OnboardingState copyWith({OnboardingStatus? status, String? hobbyInput}) {
-    return OnboardingState(
+  DiscoveryState copyWith({DiscoveryStatus? status, String? hobbyInput}) {
+    return DiscoveryState(
       status: status ?? this.status,
       hobbyInput: hobbyInput ?? this.hobbyInput,
     );

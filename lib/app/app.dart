@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hob_it/features/discovery/view/discovery_page.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -13,7 +14,7 @@ class App extends StatelessWidget {
         fontFamily: 'Poppins',
         useMaterial3: true,
       ),
-      home: const Scaffold(body: Center(child: Text('hob-it'))),
+      home: DiscoveryPage(),
     );
   }
 }

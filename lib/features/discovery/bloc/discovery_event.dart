@@ -1,11 +1,11 @@
-part of 'onboarding_bloc.dart';
+part of 'discovery_bloc.dart';
 
 /// Base class for all onboarding-related events.
 ///
-/// All events that drive the [OnboardingBloc] must extend this class.
+/// All events that drive the [DiscoveryBloc] must extend this class.
 /// Uses [sealed] to enforce exhaustive handling in switch expressions.
-sealed class OnboardingEvent extends Equatable {
-  const OnboardingEvent();
+sealed class DiscoveryEvent extends Equatable {
+  const DiscoveryEvent();
 
   @override
   List<Object> get props => [];
@@ -13,18 +13,18 @@ sealed class OnboardingEvent extends Equatable {
 
 /// Fired when the user updates the hobby input field.
 ///
-/// Should be dispatched on every keystroke so [OnboardingBloc]
+/// Should be dispatched on every keystroke so [DiscoveryBloc]
 /// keeps [OnboardingState.hobbyInput] in sync with the text field.
 ///
 /// Example:
 /// ```dart
-/// context.read<OnboardingBloc>().add(
-///   const OnboardingHobbyInputChanged('fly fishing'),
+/// context.read<DiscoveryBloc>().add(
+///   const DiscoveryHobbyInputChanged('fly fishing'),
 /// );
 /// ```
-final class OnboardingHobbyInputChanged extends OnboardingEvent {
-  /// Creates an [OnboardingHobbyInputChanged] with the given [input].
-  const OnboardingHobbyInputChanged(this.input);
+final class DiscoveryHobbyInputChanged extends DiscoveryEvent {
+  /// Creates an [DiscoveryHobbyInputChanged] with the given [input].
+  const DiscoveryHobbyInputChanged(this.input);
 
   /// The current value of the hobby text field.
   final String input;
@@ -37,7 +37,7 @@ final class OnboardingHobbyInputChanged extends OnboardingEvent {
 ///
 /// Triggers the Gemini agent call and initiates GenUI surface
 /// generation. Has no effect if [OnboardingState.hobbyInput] is empty.
-final class OnboardingSubmitted extends OnboardingEvent {
-  /// Creates an [OnboardingSubmitted] event.
-  const OnboardingSubmitted();
+final class DiscoverySubmitted extends DiscoveryEvent {
+  /// Creates an [DiscoverySubmitted] event.
+  const DiscoverySubmitted();
 }
