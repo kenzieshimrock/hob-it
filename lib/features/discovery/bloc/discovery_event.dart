@@ -3,7 +3,7 @@ part of 'discovery_bloc.dart';
 /// Base class for all onboarding-related events.
 ///
 /// All events that drive the [DiscoveryBloc] must extend this class.
-/// Uses [sealed] to enforce exhaustive handling in switch expressions.
+/// Uses sealed to enforce exhaustive handling in switch expressions.
 sealed class DiscoveryEvent extends Equatable {
   const DiscoveryEvent();
 
@@ -14,7 +14,7 @@ sealed class DiscoveryEvent extends Equatable {
 /// Fired when the user updates the hobby input field.
 ///
 /// Should be dispatched on every keystroke so [DiscoveryBloc]
-/// keeps [OnboardingState.hobbyInput] in sync with the text field.
+/// keeps [DiscoveryState.hobbyInput] in sync with the text field.
 ///
 /// Example:
 /// ```dart
@@ -36,7 +36,7 @@ final class DiscoveryHobbyInputChanged extends DiscoveryEvent {
 /// Fired when the user submits their hobby selection.
 ///
 /// Triggers the Gemini agent call and initiates GenUI surface
-/// generation. Has no effect if [OnboardingState.hobbyInput] is empty.
+/// generation. Has no effect if [DiscoveryState.hobbyInput] is empty.
 final class DiscoverySubmitted extends DiscoveryEvent {
   /// Creates an [DiscoverySubmitted] event.
   const DiscoverySubmitted();

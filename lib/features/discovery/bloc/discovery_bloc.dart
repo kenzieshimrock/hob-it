@@ -7,10 +7,10 @@ part 'discovery_state.dart';
 /// Manages the state of the onboarding flow.
 ///
 /// Handles user hobby input and submission, coordinating
-/// with the GenUI [Conversation] to generate the initial
+/// with the GenUI `Conversation` to generate the initial
 /// surface based on the user's expressed hobby interest.
 class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
-  /// Creates an [DiscoveryBloc] with an [DiscoveryState.initial] state.
+  /// Creates a [DiscoveryBloc] with an initial [DiscoveryState].
   DiscoveryBloc() : super(const DiscoveryState()) {
     on<DiscoveryHobbyInputChanged>(_onHobbyInputChanged);
     on<DiscoverySubmitted>(_onSubmitted);
@@ -38,9 +38,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     emit(state.copyWith(status: DiscoveryStatus.loading));
 
     try {
-      // TODO: wire Gemini Conversation call here
+      // TODO(kenzie): wire Gemini Conversation call here
       emit(state.copyWith(status: DiscoveryStatus.success));
-    } catch (e) {
+    } on Exception catch (_) {
       emit(state.copyWith(status: DiscoveryStatus.failure));
     }
   }
