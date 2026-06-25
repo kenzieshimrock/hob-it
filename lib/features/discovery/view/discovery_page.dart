@@ -32,8 +32,6 @@ class DiscoveryView extends StatelessWidget {
     return BlocListener<DiscoveryBloc, DiscoveryState>(
       listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
-
-        
         if (state.status == DiscoveryStatus.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Something went wrong. Try again.')),
@@ -41,7 +39,6 @@ class DiscoveryView extends StatelessWidget {
         }
       },
       child: const Scaffold(
-        backgroundColor: Color(0xFF0A1530),
         body: SafeArea(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -73,18 +70,12 @@ class _Header extends StatelessWidget {
       children: [
         Text(
           'hob-it',
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: const Color(0xFF2A48DE),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'What hobby do you want to explore?',
           style: Theme.of(
             context,
-          ).textTheme.titleMedium?.copyWith(color: Colors.white70),
+          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 8),
+        const Text('What hobby do you want to explore?'),
       ],
     );
   }
@@ -97,12 +88,9 @@ class _HobbyInputField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: 'e.g. I want to try fly fishing',
-        hintStyle: const TextStyle(color: Colors.white38),
         filled: true,
-        fillColor: Colors.white10,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -128,7 +116,6 @@ class _SubmitButton extends StatelessWidget {
       width: double.infinity,
       child: FilledButton(
         style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF2A48DE),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -142,10 +129,7 @@ class _SubmitButton extends StatelessWidget {
             ? const SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2),
               )
             : const Text("Let's go"),
       ),
