@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:genui/genui.dart';
 import 'package:hob_it/features/discovery/bloc/discovery_bloc.dart';
+import 'package:hob_it/genui/hobby_conversation.dart';
 import 'package:hob_it/ui/ui.dart';
 
 /// The Discover tab — entry point for starting a new hobby discovery.
@@ -14,7 +16,7 @@ class DiscoveryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => DiscoveryBloc(),
+      create: (_) => DiscoveryBloc(conversation: HobbyConversation()),
       child: const DiscoveryView(),
     );
   }
@@ -58,12 +60,29 @@ class _DiscoveryFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaceIds = context.select(
+      (DiscoveryBloc bloc) => bloc.state.surfaceIds,
+    );
+
+    final hobbyConversation = context.read<DiscoveryBloc>().conversation;
+
     return ListView(
       padding: const EdgeInsets.all(HobItSpacing.lg),
-      children: const [
-        _AgentIntroMessage(),
-        SizedBox(height: HobItSpacing.md),
-        _SuggestionChips(),
+      children: [
+        const _AgentIntroMessage(),
+        const SizedBox(height: HobItSpacing.md),
+        const _SuggestionChips(),
+        if (surfaceIds.isNotEmpty) ...[
+          const SizedBox(height: HobItSpacing.lg),
+          ...surfaceIds.map(
+            (id) => Padding(
+              padding: const EdgeInsets.only(bottom: HobItSpacing.md),
+              child: Surface(
+                surfaceContext: hobbyConversation.host.contextFor(id),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
