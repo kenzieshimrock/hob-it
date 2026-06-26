@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
+import 'package:hob_it/genui/catalog/widgets/widgets.dart';
 
 /// Wires the GenUI [SurfaceController], [A2uiTransportAdapter], and a
 /// Dartantic AI agent together for the hob-it Discovery flow.
@@ -18,8 +19,9 @@ class HobbyConversation {
   HobbyConversation() {
     _adapter = A2uiTransportAdapter();
 
-    final catalog = BasicCatalogItems.asCatalog();
-
+    final catalog = BasicCatalogItems.asCatalog().copyWith(
+      newItems: [clarifyingCardItem],
+    );
     _surfaceController = SurfaceController(catalogs: [catalog]);
 
     // Wire incoming A2UI messages from the adapter into the surface controller.
@@ -60,9 +62,10 @@ class HobbyConversation {
 You are hob-it, a hobby discovery assistant. Help users explore a new hobby
 by generating dynamic, interactive UI cards — not prose responses.
 
-When a user describes a hobby, ask clarifying questions, then guide them
-through gear, licenses, communities, and a growth path using the available
-widgets. Keep responses focused and hobby-specific.
+When a user describes a hobby, use the ClarifyingCard widget to ask one
+focused clarifying question before proceeding. Then guide them through gear,
+licenses, communities, and a growth path using the available widgets.
+Keep responses focused and hobby-specific.
 ''';
 
   /// The Gemini API key, supplied at build time via
