@@ -41,3 +41,28 @@ final class DiscoverySubmitted extends DiscoveryEvent {
   /// Creates an [DiscoverySubmitted] event.
   const DiscoverySubmitted();
 }
+
+/// Fired internally when the GenUI pipeline adds a new surface.
+///
+/// Not dispatched by the UI — only by [DiscoveryBloc] in response
+/// to [ConversationSurfaceAdded] events from [HobbyConversation].
+final class _DiscoverySurfaceAdded extends DiscoveryEvent {
+  const _DiscoverySurfaceAdded(this.surfaceId);
+
+  /// The ID of the newly created surface.
+  final String surfaceId;
+
+  @override
+  List<Object> get props => [surfaceId];
+}
+
+/// Fired internally when the GenUI pipeline removes a surface.
+final class _DiscoverySurfaceRemoved extends DiscoveryEvent {
+  const _DiscoverySurfaceRemoved(this.surfaceId);
+
+  /// The ID of the surface to remove.
+  final String surfaceId;
+
+  @override
+  List<Object> get props => [surfaceId];
+}
