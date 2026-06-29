@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:genui/genui.dart';
 import 'package:hob_it/ui/ui.dart';
 
-/// A single selectable option within a [ClarifyingCardWidget].
+/// A single selectable option within a [ClarifyingCard].
 class ClarifyingOption {
   const ClarifyingOption({required this.label, required this.value});
 
@@ -18,9 +18,9 @@ class ClarifyingOption {
 /// Renders a question with selectable option tiles. When the user selects
 /// an option and taps Continue, dispatches a [UserActionEvent] named
 /// `clarifyingOptionsSelected` carrying the selected [ClarifyingOption.value]
-class ClarifyingCardWidget extends StatefulWidget {
-  /// Creates a [ClarifyingCardWidget].
-  const ClarifyingCardWidget({
+class ClarifyingCard extends StatefulWidget {
+  /// Creates a [ClarifyingCard].
+  const ClarifyingCard({
     super.key,
     required this.itemContext,
     required this.title,
@@ -41,10 +41,10 @@ class ClarifyingCardWidget extends StatefulWidget {
   final List<ClarifyingOption> options;
 
   @override
-  State<ClarifyingCardWidget> createState() => _ClarifyingCardWidgetState();
+  State<ClarifyingCard> createState() => _ClarifyingCardState();
 }
 
-class _ClarifyingCardWidgetState extends State<ClarifyingCardWidget> {
+class _ClarifyingCardState extends State<ClarifyingCard> {
   String? _selectedValue;
 
   void _onSelect(String value) {
@@ -107,7 +107,7 @@ class _ClarifyingCardWidgetState extends State<ClarifyingCardWidget> {
   }
 }
 
-/// A single selectable option tile inside [ClarifyingCardWidget].
+/// A single selectable option tile inside [ClarifyingCard].
 class _OptionTile extends StatelessWidget {
   const _OptionTile({
     required this.option,

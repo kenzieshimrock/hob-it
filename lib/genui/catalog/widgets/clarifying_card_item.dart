@@ -2,7 +2,7 @@ import 'package:genui/genui.dart';
 import 'package:hob_it/genui/catalog/widgets/widgets.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
-/// The [CatalogItem] registration for [ClarifyingCardWidget].
+/// The [CatalogItem] registration for [ClarifyingCard].
 ///
 /// Declares the data schema the agent must follow and maps incoming
 /// A2UI component data to the Flutter widget.
@@ -54,7 +54,7 @@ final CatalogItem clarifyingCardItem = CatalogItem(
   widgetBuilder: (itemContext) {
     final data = itemContext.data as Map<String, dynamic>;
 
-    return ClarifyingCardWidget(
+    return ClarifyingCard(
       itemContext: itemContext,
       title: data['title'] as String,
       subtitle: data['subtitle'] as String?,
