@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
+import 'package:hob_it/genui/catalog/widgets/widgets.dart';
 
 /// Wires the GenUI [SurfaceController], [A2uiTransportAdapter], and a
 /// Dartantic AI agent together for the hob-it Discovery flow.
@@ -18,14 +20,18 @@ class HobbyConversation {
   HobbyConversation() {
     _adapter = A2uiTransportAdapter();
 
-    final catalog = BasicCatalogItems.asCatalog();
-
+    final catalog = BasicCatalogItems.asCatalog().copyWith(
+      newItems: [clarifyingCardItem, starterKitCatalogItem],
+    );
     _surfaceController = SurfaceController(catalogs: [catalog]);
 
     // Wire incoming A2UI messages from the adapter into the surface controller.
     _messageSub = _adapter.incomingMessages.listen(
       _surfaceController.handleMessage,
     );
+
+    // listen for user interaction.
+    _actionSub = _surfaceController.onSubmit.listen(_handleUserAction);
 
     _provider = dartantic.GoogleProvider(apiKey: _apiKey);
 
@@ -60,9 +66,10 @@ class HobbyConversation {
 You are hob-it, a hobby discovery assistant. Help users explore a new hobby
 by generating dynamic, interactive UI cards — not prose responses.
 
-When a user describes a hobby, ask clarifying questions, then guide them
-through gear, licenses, communities, and a growth path using the available
-widgets. Keep responses focused and hobby-specific.
+When a user describes a hobby, use the ClarifyingCard widget to ask one
+focused clarifying question before proceeding. Then guide them through gear,
+licenses, communities, and a growth path using the available widgets.
+Keep responses focused and hobby-specific.
 ''';
 
   /// The Gemini API key, supplied at build time via
@@ -74,6 +81,7 @@ widgets. Keep responses focused and hobby-specific.
   late final dartantic.GoogleProvider _provider;
   late final dartantic.Agent _agent;
   late final StreamSubscription<A2uiMessage> _messageSub;
+  late final StreamSubscription<ChatMessage> _actionSub;
 
   /// Running conversation history, including the system prompt.
   final List<dartantic.ChatMessage> _history = [];
@@ -92,15 +100,56 @@ widgets. Keep responses focused and hobby-specific.
   /// generated UI surfaces.
   SurfaceHost get host => _surfaceController;
 
-  /// Sends [userText] to the Gemini agent and streams response
-  /// chunks into the [A2uiTransportAdapter].
-  Future<void> sendRequest(String userText) async {
-    _history.add(dartantic.ChatMessage.user(userText));
+  /// Sends [userMessage] to the agent as a plain human turn.
+  ///
+  /// Appends the message to history and triggers an agent response.
+  Future<void> sendRequest(String userMessage) async {
+    _history.add(dartantic.ChatMessage.user(userMessage));
 
+    await _streamAgentResponse();
+  }
+
+  /// Handles a [ChatMessage] emitted by [SurfaceController.onSubmit].
+  ///
+  /// Converts the [UiInteractionPart] to a plain-text user message before
+  /// sending to the agent. The Gemini API does not support the
+  /// `application/vnd.genui.interaction+json` MIME type natively.
+  Future<void> _handleUserAction(ChatMessage message) async {
+    debugPrint(
+      'HobbyConversation: _handleUserAction called, parts: ${message.parts.length}',
+    );
+
+    final interactionText = _extractInteractionText(message);
+    debugPrint('HobbyConversation: sending interaction text: $interactionText');
+
+    await sendRequest(interactionText);
+  }
+
+  /// Finds the [UiInteractionPart] in [message] and formats it as a
+  /// plain-text string the Gemini agent can understand.
+  ///
+  /// Falls back to a generic acknowledgement if no interaction part is found.
+  String _extractInteractionText(ChatMessage message) {
+    for (final part in message.parts) {
+      if (part.isUiInteractionPart) {
+        final interaction = part.asUiInteractionPart!;
+        return '[UI Interaction] ${interaction.interaction}';
+      }
+    }
+    return '[User submitted a UI interaction]';
+  }
+
+  /// Streams an agent response using the current [_history] as full context.
+  ///
+  /// Called after a UI interaction message has already been appended to
+  /// [_history] by [_handleUserAction]. Passes an empty string as the
+  /// required message argument — the actual interaction content is carried
+  /// by the [UiInteractionPart] already in history.
+  Future<void> _streamAgentResponse() async {
     final buffer = StringBuffer();
 
     try {
-      final stream = _agent.sendStream(userText, history: List.of(_history));
+      final stream = _agent.sendStream('', history: List.of(_history));
 
       await for (final result in stream) {
         if (result.output.isNotEmpty) {
@@ -121,6 +170,7 @@ widgets. Keep responses focused and hobby-specific.
   /// Must be called when the owning widget is removed from the tree.
   void dispose() {
     _messageSub.cancel();
+    _actionSub.cancel();
     _adapter.dispose();
     _surfaceController.dispose();
   }
