@@ -20,7 +20,13 @@ class HobbyConversation {
     _adapter = A2uiTransportAdapter();
 
     final catalog = BasicCatalogItems.asCatalog().copyWith(
-      newItems: [clarifyingCardItem, starterKitCatalogItem, gearCardItem],
+      newItems: [
+        adminChecklistItem,
+        clarifyingCardItem,
+        starterKitCatalogItem,
+        gearCardItem,
+        onboardingRoadmapItem,
+      ],
     );
     _surfaceController = SurfaceController(catalogs: [catalog]);
 
