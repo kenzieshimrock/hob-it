@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:flutter/foundation.dart';
@@ -21,7 +20,7 @@ class HobbyConversation {
     _adapter = A2uiTransportAdapter();
 
     final catalog = BasicCatalogItems.asCatalog().copyWith(
-      newItems: [clarifyingCardItem, starterKitCatalogItem],
+      newItems: [clarifyingCardItem, starterKitCatalogItem, gearCardItem],
     );
     _surfaceController = SurfaceController(catalogs: [catalog]);
 
