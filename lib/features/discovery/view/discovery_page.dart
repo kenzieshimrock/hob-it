@@ -70,8 +70,8 @@ class _DiscoveryFeed extends StatelessWidget {
       padding: const EdgeInsets.all(HobItSpacing.lg),
       children: [
         const _AgentIntroMessage(),
-        const SizedBox(height: HobItSpacing.md),
-        const _SuggestionChips(),
+        // const SizedBox(height: HobItSpacing.md),
+        // const _SuggestionChips(),
         if (surfaceIds.isNotEmpty) ...[
           const SizedBox(height: HobItSpacing.lg),
           ...surfaceIds.map(
