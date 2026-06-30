@@ -21,6 +21,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     on<DiscoverySubmitted>(_onSubmitted);
     on<_DiscoverySurfaceAdded>(_onSurfaceAdded);
     on<_DiscoverySurfaceRemoved>(_onSurfaceRemoved);
+    on<_DiscoveryAgentChunkReceived>(_onAgentChunkReceived);
 
     _conversationSubscription = _conversation.surfaceUpdates.listen((update) {
       switch (update) {
@@ -32,14 +33,26 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
           break;
       }
     });
+    _textSubscription = _conversation.incomingText.listen(
+      (_) => add(const _DiscoveryAgentChunkReceived()),
+    );
+  }
+
+  late final StreamSubscription<String> _textSubscription;
+
+  /// Flips [DiscoveryState.isResponding] on at the first streamed chunk.
+  void _onAgentChunkReceived(
+    _DiscoveryAgentChunkReceived event,
+    Emitter<DiscoveryState> emit,
+  ) {
+    if (!state.isResponding) emit(state.copyWith(isResponding: true));
   }
 
   final HobbyConversation _conversation;
 
   late final StreamSubscription<SurfaceUpdate> _conversationSubscription;
 
-  /// Exposes the [HobbyConversation] so the view can pass [ConversationHost]
-  /// to [Surface] widgets.
+  /// Exposes the [HobbyConversation]
   HobbyConversation get conversation => _conversation;
 
   /// Updates [DiscoveryState.hobbyInput] as the user types.
@@ -57,6 +70,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     DiscoverySubmitted event,
     Emitter<DiscoveryState> emit,
   ) async {
+    emit(state.copyWith(status: DiscoveryStatus.loading, isResponding: true));
     if (state.hobbyInput.isEmpty) return;
     if (state.status == DiscoveryStatus.loading) return;
 
@@ -75,7 +89,12 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     _DiscoverySurfaceAdded event,
     Emitter<DiscoveryState> emit,
   ) {
-    emit(state.copyWith(surfaceIds: [...state.surfaceIds, event.surfaceId]));
+    emit(
+      state.copyWith(
+        surfaceIds: [...state.surfaceIds, event.surfaceId],
+        isResponding: false,
+      ),
+    );
   }
 
   /// Removes a surface ID from [DiscoveryState.surfaceIds].
@@ -95,6 +114,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
   @override
   Future<void> close() async {
     await _conversationSubscription.cancel();
+    await _textSubscription.cancel();
     _conversation.dispose();
     return super.close();
   }

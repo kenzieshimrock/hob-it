@@ -26,7 +26,14 @@ final class DiscoveryState extends Equatable {
     this.status = DiscoveryStatus.initial,
     this.hobbyInput = '',
     this.surfaceIds = const [],
+    this.isResponding = false,
   });
+
+  /// Whether the agent is currently streaming a response.
+  ///
+  /// Drives the typing indicator in the feed. Set true when the agent
+  /// starts streaming, and false once its next surface has rendered.
+  final bool isResponding;
 
   /// The current phase of the onboarding agent request.
   final DiscoveryStatus status;
@@ -46,14 +53,16 @@ final class DiscoveryState extends Equatable {
     DiscoveryStatus? status,
     String? hobbyInput,
     List<String>? surfaceIds,
+    bool? isResponding,
   }) {
     return DiscoveryState(
       status: status ?? this.status,
       hobbyInput: hobbyInput ?? this.hobbyInput,
       surfaceIds: surfaceIds ?? this.surfaceIds,
+      isResponding: isResponding ?? this.isResponding,
     );
   }
 
   @override
-  List<Object> get props => [status, hobbyInput, surfaceIds];
+  List<Object> get props => [status, hobbyInput, surfaceIds, isResponding];
 }
