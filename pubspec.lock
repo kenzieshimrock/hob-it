@@ -384,6 +384,20 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.0"
+  hobby_api:
+    dependency: transitive
+    description:
+      path: "packages/hobby_api"
+      relative: true
+    source: path
+    version: "1.0.0+1"
+  hobby_repository:
+    dependency: "direct main"
+    description:
+      path: "packages/hobby_repository"
+      relative: true
+    source: path
+    version: "1.0.0+1"
   hooks:
     dependency: transitive
     description:
@@ -416,6 +430,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  in_memory_hobby_api:
+    dependency: "direct main"
+    description:
+      path: "packages/in_memory_hobby_api"
+      relative: true
+    source: path
+    version: "1.0.0+1"
   intl:
     dependency: transitive
     description:
@@ -440,6 +461,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.12.0"
   json_schema_builder:
     dependency: "direct main"
     description:

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:hobby_api/src/models/journey_step.dart';
+import 'package:hobby_repository/src/models/journey_step.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'hobby.g.dart';
