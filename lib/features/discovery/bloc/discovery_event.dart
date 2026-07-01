@@ -74,3 +74,24 @@ final class _DiscoverySurfaceRemoved extends DiscoveryEvent {
 final class _DiscoveryAgentChunkReceived extends DiscoveryEvent {
   const _DiscoveryAgentChunkReceived();
 }
+
+/// Fired internally when the agent's roadmap surface announces its steps.
+final class _DiscoveryStepsGenerated extends DiscoveryEvent {
+  const _DiscoveryStepsGenerated(this.steps);
+
+  final List<JourneyStep> steps;
+
+  @override
+  List<Object> get props => [steps];
+}
+
+/// Fired internally when the user toggles a roadmap step.
+final class _DiscoveryStepToggled extends DiscoveryEvent {
+  const _DiscoveryStepToggled({required this.stepId, required this.isComplete});
+
+  final String stepId;
+  final bool isComplete;
+
+  @override
+  List<Object> get props => [stepId, isComplete];
+}

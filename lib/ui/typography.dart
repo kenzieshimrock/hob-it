@@ -112,6 +112,15 @@ abstract final class HobItTypography {
     letterSpacing: 1.2,
   );
 
+  /// Category tag style for an open category keyword, colored via
+  /// [HobItColors.categoryColorFor] with a neutral fallback.
+  static TextStyle categoryLabelFor(String category) => GoogleFonts.poppins(
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
+    color: HobItColors.categoryColorFor(category),
+    letterSpacing: 1.2,
+  );
+
   /// Price style — large blue amounts like "$180" or "$152".
   static TextStyle get price => GoogleFonts.poppins(
     fontSize: 32,

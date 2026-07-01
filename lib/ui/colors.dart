@@ -86,6 +86,21 @@ abstract final class HobItColors {
     };
   }
 
+  /// Returns the color for an open category keyword.
+  ///
+  /// Maps the known onboarding categories to their brand colors and falls
+  /// back to [navy] for any category the agent invents beyond the core set.
+  static Color categoryColorFor(String category) {
+    return switch (category.trim().toLowerCase()) {
+      'community' => green,
+      'gear' => blue,
+      'learn' => orange,
+      'admin' => purple,
+      'roadmap' => amber,
+      _ => navy,
+    };
+  }
+
   // ── VGV Gradient ──────────────────────────────────────────
 
   /// VGV brand gradient: Navy → Blue (diagonal, preferred direction).

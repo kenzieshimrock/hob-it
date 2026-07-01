@@ -61,4 +61,26 @@ class HobbyRepository {
       hobby.copyWith(steps: steps, updatedAt: DateTime.now()).toJson(),
     );
   }
+
+  /// Replaces the steps of hobby [hobbyId]. No-op if the hobby is not found.
+  Future<void> setSteps({
+    required String hobbyId,
+    required List<JourneyStep> steps,
+  }) async {
+    final rows = await _hobbyApi.getHobbies().first;
+
+    Map<String, dynamic>? row;
+    for (final candidate in rows) {
+      if (candidate['id'] == hobbyId) {
+        row = candidate;
+        break;
+      }
+    }
+    if (row == null) return;
+
+    final hobby = Hobby.fromJson(row);
+    await _hobbyApi.saveHobby(
+      hobby.copyWith(steps: steps, updatedAt: DateTime.now()).toJson(),
+    );
+  }
 }

@@ -26,6 +26,22 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     on<_DiscoverySurfaceAdded>(_onSurfaceAdded);
     on<_DiscoverySurfaceRemoved>(_onSurfaceRemoved);
     on<_DiscoveryAgentChunkReceived>(_onAgentChunkReceived);
+    on<_DiscoveryStepsGenerated>(_onStepsGenerated);
+    on<_DiscoveryStepToggled>(_onStepToggled);
+
+    _progressSubscription = _conversation.progressActions.listen((event) {
+      switch (event.name) {
+        case 'roadmapGenerated':
+          add(_DiscoveryStepsGenerated(_stepsFromContext(event.context)));
+        case 'roadmapStepToggled':
+          add(
+            _DiscoveryStepToggled(
+              stepId: event.context['stepId'] as String? ?? '',
+              isComplete: event.context['isComplete'] as bool? ?? false,
+            ),
+          );
+      }
+    });
 
     _conversationSubscription = _conversation.surfaceUpdates.listen((update) {
       switch (update) {
@@ -61,6 +77,42 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     Emitter<DiscoveryState> emit,
   ) {
     emit(state.copyWith(hobbyInput: event.input));
+  }
+
+  late final StreamSubscription<SurfaceProgressEvent> _progressSubscription;
+
+  List<JourneyStep> _stepsFromContext(Map<String, dynamic> context) {
+    final raw = (context['steps'] as List?) ?? const [];
+    return raw.map((entry) {
+      final map = (entry as Map).cast<String, dynamic>();
+      return JourneyStep(
+        id: map['id'] as String,
+        title: map['title'] as String,
+        category: (map['category'] as String? ?? 'gear').trim().toLowerCase(),
+      );
+    }).toList();
+  }
+
+  Future<void> _onStepsGenerated(
+    _DiscoveryStepsGenerated event,
+    Emitter<DiscoveryState> emit,
+  ) async {
+    final hobbyId = state.hobbyId;
+    if (hobbyId == null) return;
+    await _hobbyRepository.setSteps(hobbyId: hobbyId, steps: event.steps);
+  }
+
+  Future<void> _onStepToggled(
+    _DiscoveryStepToggled event,
+    Emitter<DiscoveryState> emit,
+  ) async {
+    final hobbyId = state.hobbyId;
+    if (hobbyId == null) return;
+    await _hobbyRepository.setStepComplete(
+      hobbyId: hobbyId,
+      stepId: event.stepId,
+      isComplete: event.isComplete,
+    );
   }
 
   /// Persists the hobby on the first message, then sends input to the agent.
@@ -146,6 +198,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
   Future<void> close() async {
     await _conversationSubscription.cancel();
     await _textSubscription.cancel();
+    await _progressSubscription.cancel();
     _conversation.dispose();
     return super.close();
   }

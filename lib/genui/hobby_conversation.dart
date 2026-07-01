@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dartantic_ai/dartantic_ai.dart' as dartantic;
 import 'package:flutter/foundation.dart';
@@ -114,34 +115,62 @@ Keep responses focused and hobby-specific.
     await _streamAgentResponse();
   }
 
+  final StreamController<SurfaceProgressEvent> _progressController =
+      StreamController<SurfaceProgressEvent>.broadcast();
+
+  /// Local, non-agent interactions from generated surfaces.
+  Stream<SurfaceProgressEvent> get progressActions =>
+      _progressController.stream;
+
+  /// Action names handled locally (persisted), never sent to the model.
+  static const Set<String> _progressActionNames = {
+    'roadmapGenerated',
+    'roadmapStepToggled',
+  };
+
   /// Handles a [ChatMessage] emitted by [SurfaceController.onSubmit].
   ///
   /// Converts the [UiInteractionPart] to a plain-text user message before
   /// sending to the agent. The Gemini API does not support the
   /// `application/vnd.genui.interaction+json` MIME type natively.
   Future<void> _handleUserAction(ChatMessage message) async {
-    debugPrint(
-      'HobbyConversation: _handleUserAction called, parts: ${message.parts.length}',
-    );
+    final interaction = _extractInteraction(message);
 
-    final interactionText = _extractInteractionText(message);
-    debugPrint('HobbyConversation: sending interaction text: $interactionText');
+    if (interaction == null) {
+      await sendRequest('[User submitted a UI interaction]');
+      return;
+    }
 
-    await sendRequest(interactionText);
+    if (_progressActionNames.contains(interaction.name)) {
+      _progressController.add(
+        SurfaceProgressEvent(
+          name: interaction.name,
+          context: interaction.context,
+        ),
+      );
+      return; // handled locally; do not send to the agent
+    }
+    await sendRequest('[UI Interaction] ${interaction.raw}');
   }
 
-  /// Finds the [UiInteractionPart] in [message] and formats it as a
-  /// plain-text string the Gemini agent can understand.
-  ///
-  /// Falls back to a generic acknowledgement if no interaction part is found.
-  String _extractInteractionText(ChatMessage message) {
+  _ParsedInteraction? _extractInteraction(ChatMessage message) {
     for (final part in message.parts) {
       if (part.isUiInteractionPart) {
-        final interaction = part.asUiInteractionPart!;
-        return '[UI Interaction] ${interaction.interaction}';
+        final raw = part.asUiInteractionPart!.interaction;
+        try {
+          final decoded = jsonDecode(raw) as Map<String, dynamic>;
+          final action = (decoded['action'] as Map).cast<String, dynamic>();
+          return _ParsedInteraction(
+            name: action['name'] as String? ?? '',
+            context: (action['context'] as Map?)?.cast<String, dynamic>() ?? {},
+            raw: raw,
+          );
+        } catch (_) {
+          return _ParsedInteraction(name: '', context: const {}, raw: raw);
+        }
       }
     }
-    return '[User submitted a UI interaction]';
+    return null;
   }
 
   /// Streams an agent response using the current [_history] as full context.
@@ -176,7 +205,35 @@ Keep responses focused and hobby-specific.
   void dispose() {
     _messageSub.cancel();
     _actionSub.cancel();
+    _progressController.close();
     _adapter.dispose();
     _surfaceController.dispose();
   }
+}
+
+/// A local interaction from a generated surface (e.g. roadmap progress).
+///
+/// Consumed by [DiscoveryBloc] to persist progress. These are deliberately
+/// NOT forwarded to the agent.
+class SurfaceProgressEvent {
+  /// Creates a [SurfaceProgressEvent].
+  const SurfaceProgressEvent({required this.name, required this.context});
+
+  /// The dispatched action name, e.g. `roadmapStepToggled`.
+  final String name;
+
+  /// The action payload.
+  final Map<String, dynamic> context;
+}
+
+class _ParsedInteraction {
+  const _ParsedInteraction({
+    required this.name,
+    required this.context,
+    required this.raw,
+  });
+
+  final String name;
+  final Map<String, dynamic> context;
+  final String raw;
 }
