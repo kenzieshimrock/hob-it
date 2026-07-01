@@ -6,11 +6,12 @@ import 'package:genui/genui.dart';
 import 'package:hob_it/features/discovery/bloc/discovery_bloc.dart';
 import 'package:hob_it/genui/hobby_conversation.dart';
 import 'package:hob_it/ui/ui.dart';
+import 'package:hobby_repository/hobby_repository.dart';
 
 /// The Discover tab — entry point for starting a new hobby discovery.
 ///
-/// Provides [DiscoveryBloc] to the widget subtree and delegates
-/// rendering to [DiscoveryView].
+/// Provides [DiscoveryBloc] to the widget subtree and delegates rendering to
+/// [DiscoveryView]. Reads the app-provided [HobbyRepository].
 class DiscoveryPage extends StatelessWidget {
   /// Creates a [DiscoveryPage].
   const DiscoveryPage({super.key});
@@ -18,16 +19,16 @@ class DiscoveryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => DiscoveryBloc(conversation: HobbyConversation()),
+      create: (context) => DiscoveryBloc(
+        conversation: HobbyConversation(),
+        hobbyRepository: context.read<HobbyRepository>(),
+      ),
       child: const DiscoveryView(),
     );
   }
 }
 
 /// The visual layer of the Discover tab.
-///
-/// Shows an agent intro message, suggestion chips, and a pinned
-/// chat-style input bar at the bottom of the screen.
 class DiscoveryView extends StatelessWidget {
   /// Creates a [DiscoveryView].
   const DiscoveryView({super.key});
@@ -53,10 +54,10 @@ class DiscoveryView extends StatelessWidget {
   }
 }
 
-/// Scrollable feed showing the agent intro, suggestion chips, generated
-/// surfaces, and a typing indicator while the agent responds.
+/// Scrollable feed of the agent intro, suggestion chips, the conversation
+/// (user messages and generated surfaces), and a typing indicator.
 ///
-/// Auto-scrolls to the newest content as surfaces arrive.
+/// Auto-scrolls to the newest content as items arrive.
 class _DiscoveryFeed extends StatefulWidget {
   const _DiscoveryFeed();
 
@@ -90,11 +91,11 @@ class _DiscoveryFeedState extends State<_DiscoveryFeed> {
 
     return BlocConsumer<DiscoveryBloc, DiscoveryState>(
       listenWhen: (previous, current) =>
-          previous.surfaceIds.length != current.surfaceIds.length ||
+          previous.items.length != current.items.length ||
           previous.isResponding != current.isResponding,
       listener: (context, state) => _scrollToBottom(),
       buildWhen: (previous, current) =>
-          previous.surfaceIds != current.surfaceIds ||
+          previous.items != current.items ||
           previous.isResponding != current.isResponding,
       builder: (context, state) {
         return ListView(
@@ -104,14 +105,19 @@ class _DiscoveryFeedState extends State<_DiscoveryFeed> {
             const _AgentIntroMessage(),
             const SizedBox(height: HobItSpacing.md),
             const _SuggestionChips(),
-            if (state.surfaceIds.isNotEmpty) ...[
+            if (state.items.isNotEmpty) ...[
               const SizedBox(height: HobItSpacing.lg),
-              for (final id in state.surfaceIds)
+              for (final item in state.items)
                 Padding(
                   padding: const EdgeInsets.only(bottom: HobItSpacing.md),
-                  child: Surface(
-                    surfaceContext: hobbyConversation.host.contextFor(id),
-                  ),
+                  child: switch (item) {
+                    UserMessageItem(:final text) => _UserMessage(text: text),
+                    AgentSurfaceItem(:final surfaceId) => Surface(
+                      surfaceContext: hobbyConversation.host.contextFor(
+                        surfaceId,
+                      ),
+                    ),
+                  },
                 ),
             ],
             if (state.isResponding) ...[
@@ -125,10 +131,42 @@ class _DiscoveryFeedState extends State<_DiscoveryFeed> {
   }
 }
 
+/// A right-aligned bubble showing a message the user sent.
+class _UserMessage extends StatelessWidget {
+  const _UserMessage({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.all(HobItSpacing.md),
+            decoration: const BoxDecoration(
+              color: HobItColors.blue,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+              ),
+            ),
+            child: Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: HobItColors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// A "hob-it is thinking" bubble shown while the agent streams a response.
-///
-/// Mirrors the styling of [_AgentIntroMessage] so the feed reads as one
-/// conversation.
 class _TypingIndicator extends StatelessWidget {
   const _TypingIndicator();
 
@@ -223,10 +261,7 @@ class _TypingDotsState extends State<_TypingDots>
   }
 }
 
-/// Agent intro message bubble.
-///
-/// The dark navy bubble introduces hob-it and explains what it can do.
-/// Styled to match the agent message pattern in the Flow C design.
+/// Agent intro message bubble introducing hob-it.
 class _AgentIntroMessage extends StatelessWidget {
   const _AgentIntroMessage();
 
@@ -238,7 +273,7 @@ class _AgentIntroMessage extends StatelessWidget {
         Container(
           width: 32,
           height: 32,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: HobItColors.blue,
             shape: BoxShape.circle,
           ),
@@ -252,9 +287,9 @@ class _AgentIntroMessage extends StatelessWidget {
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(HobItSpacing.md),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: HobItColors.navy,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topRight: Radius.circular(16),
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),
@@ -263,7 +298,7 @@ class _AgentIntroMessage extends StatelessWidget {
             child: Text(
               "Hi, I'm hob-it. Tell me any hobby you'd like to try — "
               "I'll sort out the gear, admin, learning and community "
-              "to get you started.",
+              'to get you started.',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: HobItColors.white),
@@ -275,10 +310,7 @@ class _AgentIntroMessage extends StatelessWidget {
   }
 }
 
-/// Horizontally scrolling suggestion chips.
-///
-/// Shows common hobby starting points. Tapping a chip populates
-/// the input and immediately dispatches [DiscoverySubmitted].
+/// Horizontally scrolling suggestion chips of common starting points.
 class _SuggestionChips extends StatelessWidget {
   const _SuggestionChips();
 
@@ -330,11 +362,31 @@ class _SuggestionChips extends StatelessWidget {
 
 /// Pinned input bar fixed at the bottom of the Discover tab.
 ///
-/// Pill-shaped text field with a circular navy send button.
-/// Dispatches [DiscoveryHobbyInputChanged] on each keystroke and
-/// [DiscoverySubmitted] on send.
-class _PinnedInputBar extends StatelessWidget {
+/// Owns a [TextEditingController] so it can clear on send. Submits on the
+/// send button or the keyboard action.
+class _PinnedInputBar extends StatefulWidget {
   const _PinnedInputBar();
+
+  @override
+  State<_PinnedInputBar> createState() => _PinnedInputBarState();
+}
+
+class _PinnedInputBarState extends State<_PinnedInputBar> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final bloc = context.read<DiscoveryBloc>();
+    if (bloc.state.status == DiscoveryStatus.loading) return;
+    if (_controller.text.trim().isEmpty) return;
+    bloc.add(const DiscoverySubmitted());
+    _controller.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +398,7 @@ class _PinnedInputBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: HobItColors.scaffold,
         border: Border(
-          top: BorderSide(color: HobItColors.navy.withOpacity(0.1)),
+          top: BorderSide(color: HobItColors.navy.withValues(alpha: 0.1)),
         ),
       ),
       child: SafeArea(
@@ -355,6 +407,12 @@ class _PinnedInputBar extends StatelessWidget {
           children: [
             Expanded(
               child: TextField(
+                controller: _controller,
+                textInputAction: TextInputAction.send,
+                onChanged: (value) => context.read<DiscoveryBloc>().add(
+                  DiscoveryHobbyInputChanged(value),
+                ),
+                onSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
                   hintText: 'Message hob-it...',
                   filled: true,
@@ -385,9 +443,6 @@ class _PinnedInputBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                onChanged: (value) => context.read<DiscoveryBloc>().add(
-                  DiscoveryHobbyInputChanged(value),
-                ),
               ),
             ),
             const SizedBox(width: HobItSpacing.sm),
@@ -398,9 +453,7 @@ class _PinnedInputBar extends StatelessWidget {
                 return GestureDetector(
                   onTap: state.status == DiscoveryStatus.loading
                       ? null
-                      : () => context.read<DiscoveryBloc>().add(
-                          const DiscoverySubmitted(),
-                        ),
+                      : _submit,
                   child: Container(
                     width: 44,
                     height: 44,

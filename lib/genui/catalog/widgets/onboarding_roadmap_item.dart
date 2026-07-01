@@ -66,14 +66,15 @@ final CatalogItem onboardingRoadmapItem = CatalogItem(
 
     final steps = (data['steps'] as List<dynamic>).map((raw) {
       final o = raw as Map<String, dynamic>;
+      final order = (o['order'] as num?)?.toInt() ?? 0;
       return RoadmapStep(
+        id: '$order',
         title: o['title'] as String,
-        category: parseCategory(o['category'] as String? ?? 'gear'),
+        category: (o['category'] as String? ?? 'gear').trim().toLowerCase(),
         description: o['description'] as String?,
-        order: (o['order'] as num?)?.toInt() ?? 0,
+        order: order,
       );
     }).toList()..sort((a, b) => a.order.compareTo(b.order));
-
     return OnboardingRoadmap(
       itemContext: itemContext,
       hobbyName: data['hobbyName'] as String,

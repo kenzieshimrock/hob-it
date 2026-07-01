@@ -6,33 +6,35 @@ import 'package:hob_it/ui/ui.dart';
 class RoadmapStep {
   /// Creates a [RoadmapStep].
   const RoadmapStep({
+    required this.id,
     required this.title,
     required this.category,
     required this.order,
     this.description,
   });
 
-  /// The step headline, e.g. "Join a climbing gym".
+  /// Stable id within the roadmap (the step order as a string).
+  final String id;
+
+  /// The step headline.
   final String title;
 
-  /// The category this step belongs to, used for the colored tag.
-  final HobItCategory category;
+  /// A short lowercase category keyword.
+  final String category;
 
-  /// Optional supporting detail shown below [title].
+  /// Optional supporting detail.
   final String? description;
 
-  /// The 1-based position of this step in the journey.
+  /// The 1-based position in the journey.
   final int order;
 }
 
-/// A GenUI card presenting the full onboarding journey for a hobby.
+/// A GenUI card presenting the onboarding journey for a hobby.
 ///
-/// Each step is checkable. Completion is stored in this surface's DataModel
-/// under a relative `completed.<order>` path, so tapping a step re-renders it
-/// in place and the state survives surface rebuilds, with no round trip to
-/// the agent. Note the DataModel is per-surface, so this state is local to
-/// this roadmap card.
-class OnboardingRoadmap extends StatelessWidget {
+/// On first build it dispatches `roadmapGenerated` carrying its steps so the
+/// bloc can persist them. Tapping a step dispatches `roadmapStepToggled`.
+/// Local state drives instant UI; the repository is the source of truth.
+class OnboardingRoadmap extends StatefulWidget {
   /// Creates an [OnboardingRoadmap].
   const OnboardingRoadmap({
     required this.itemContext,
@@ -41,24 +43,59 @@ class OnboardingRoadmap extends StatelessWidget {
     super.key,
   });
 
-  /// The GenUI item context, used to dispatch events and reach the DataModel.
+  /// The GenUI item context used to dispatch events.
   final CatalogItemContext itemContext;
 
-  /// The hobby this roadmap is for, e.g. "Rock climbing".
+  /// The hobby this roadmap is for.
   final String hobbyName;
 
   /// The ordered steps that make up the journey.
   final List<RoadmapStep> steps;
 
-  /// Relative DataModel key holding the per-step completion map.
-  static const String _completedKey = 'completed';
+  @override
+  State<OnboardingRoadmap> createState() => _OnboardingRoadmapState();
+}
 
-  void _onStart() {
-    itemContext.dispatchEvent(
+class _OnboardingRoadmapState extends State<OnboardingRoadmap> {
+  final Set<String> _completed = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.itemContext.dispatchEvent(
+        UserActionEvent(
+          name: 'roadmapGenerated',
+          sourceComponentId: widget.itemContext.id,
+          context: {
+            'steps': [
+              for (final step in widget.steps)
+                {
+                  'id': step.id,
+                  'title': step.title,
+                  'category': step.category,
+                },
+            ],
+          },
+        ),
+      );
+    });
+  }
+
+  void _toggle(RoadmapStep step) {
+    final nowComplete = !_completed.contains(step.id);
+    setState(() {
+      if (nowComplete) {
+        _completed.add(step.id);
+      } else {
+        _completed.remove(step.id);
+      }
+    });
+    widget.itemContext.dispatchEvent(
       UserActionEvent(
-        name: 'roadmapStarted',
-        sourceComponentId: itemContext.id,
-        context: {'hobbyName': hobbyName},
+        name: 'roadmapStepToggled',
+        sourceComponentId: widget.itemContext.id,
+        context: {'stepId': step.id, 'isComplete': nowComplete},
       ),
     );
   }
@@ -66,7 +103,6 @@ class OnboardingRoadmap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final dataContext = itemContext.dataContext;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -82,32 +118,19 @@ class OnboardingRoadmap extends StatelessWidget {
           children: [
             Text(
               'ROADMAP',
-              style: HobItTypography.categoryLabel(HobItCategory.roadmap),
+              style: HobItTypography.categoryLabelFor('roadmap'),
             ),
             const SizedBox(height: HobItSpacing.xs),
-            Text('Your $hobbyName journey', style: textTheme.titleMedium),
-            const SizedBox(height: HobItSpacing.xs),
-            _ProgressCaption(
-              dataContext: dataContext,
-              completedKey: _completedKey,
-              total: steps.length,
-            ),
+            Text('Your ${widget.hobbyName} journey',
+                style: textTheme.titleMedium),
             const SizedBox(height: HobItSpacing.md),
-            for (var i = 0; i < steps.length; i++)
+            for (var i = 0; i < widget.steps.length; i++)
               _StepRow(
-                step: steps[i],
-                isLast: i == steps.length - 1,
-                dataContext: dataContext,
-                path: '$_completedKey.${steps[i].order}',
+                step: widget.steps[i],
+                isLast: i == widget.steps.length - 1,
+                isDone: _completed.contains(widget.steps[i].id),
+                onTap: () => _toggle(widget.steps[i]),
               ),
-            const SizedBox(height: HobItSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _onStart,
-                child: const Text('Start my journey'),
-              ),
-            ),
           ],
         ),
       ),
@@ -115,75 +138,27 @@ class OnboardingRoadmap extends StatelessWidget {
   }
 }
 
-/// A live "X of N done" caption bound to the step-completion map.
-///
-/// Subscribes to the parent `completed` map so it re-renders whenever any
-/// step toggles.
-class _ProgressCaption extends StatelessWidget {
-  const _ProgressCaption({
-    required this.dataContext,
-    required this.completedKey,
-    required this.total,
-  });
-
-  final DataContext dataContext;
-  final String completedKey;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    return BoundObject(
-      dataContext: dataContext,
-      value: {'path': completedKey},
-      builder: (context, value) {
-        final map = value is Map ? value : const <dynamic, dynamic>{};
-        final done = map.values.where((v) => v == true).length;
-        return Text(
-          '$done of $total steps done',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: HobItColors.amber,
-            fontWeight: FontWeight.w600,
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// A single timeline row whose completion state is bound to the DataModel.
-///
-/// Reads its done state via [BoundBool] and toggles it on tap by writing to
-/// the same [path].
 class _StepRow extends StatelessWidget {
   const _StepRow({
     required this.step,
     required this.isLast,
-    required this.dataContext,
-    required this.path,
+    required this.isDone,
+    required this.onTap,
   });
 
   final RoadmapStep step;
   final bool isLast;
-  final DataContext dataContext;
-  final String path;
+  final bool isDone;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return BoundBool(
-      dataContext: dataContext,
-      value: {'path': path},
-      builder: (context, completed) =>
-          _buildRow(context, isDone: completed ?? false),
-    );
-  }
-
-  Widget _buildRow(BuildContext context, {required bool isDone}) {
     final textTheme = Theme.of(context).textTheme;
-    final color = HobItColors.categoryColor(step.category);
+    final color = HobItColors.categoryColorFor(step.category);
 
     return IntrinsicHeight(
       child: InkWell(
-        onTap: () => dataContext.update(DataPath(path), !isDone),
+        onTap: onTap,
         borderRadius: BorderRadius.circular(HobItSpacing.radiusXs),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,14 +201,15 @@ class _StepRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _categoryLabel(step.category),
-                      style: HobItTypography.categoryLabel(step.category),
+                      step.category.toUpperCase(),
+                      style: HobItTypography.categoryLabelFor(step.category),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       step.title,
                       style: textTheme.titleSmall?.copyWith(
-                        decoration: isDone ? TextDecoration.lineThrough : null,
+                        decoration:
+                            isDone ? TextDecoration.lineThrough : null,
                         color: isDone ? HobItColors.navy40 : null,
                       ),
                     ),
@@ -249,15 +225,5 @@ class _StepRow extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _categoryLabel(HobItCategory category) {
-    return switch (category) {
-      HobItCategory.community => 'COMMUNITY',
-      HobItCategory.gear => 'GEAR',
-      HobItCategory.learn => 'LEARN',
-      HobItCategory.admin => 'ADMIN',
-      HobItCategory.roadmap => 'ROADMAP',
-    };
   }
 }
