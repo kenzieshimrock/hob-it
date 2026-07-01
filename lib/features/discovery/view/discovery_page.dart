@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart';
@@ -51,39 +53,172 @@ class DiscoveryView extends StatelessWidget {
   }
 }
 
-/// Scrollable feed showing the agent intro and suggestion chips.
+/// Scrollable feed showing the agent intro, suggestion chips, generated
+/// surfaces, and a typing indicator while the agent responds.
 ///
-/// As the conversation progresses, GenUI surfaces render here
-/// between the intro and the pinned input bar.
-class _DiscoveryFeed extends StatelessWidget {
+/// Auto-scrolls to the newest content as surfaces arrive.
+class _DiscoveryFeed extends StatefulWidget {
   const _DiscoveryFeed();
 
   @override
-  Widget build(BuildContext context) {
-    final surfaceIds = context.select(
-      (DiscoveryBloc bloc) => bloc.state.surfaceIds,
-    );
+  State<_DiscoveryFeed> createState() => _DiscoveryFeedState();
+}
 
+class _DiscoveryFeedState extends State<_DiscoveryFeed> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final hobbyConversation = context.read<DiscoveryBloc>().conversation;
 
-    return ListView(
-      padding: const EdgeInsets.all(HobItSpacing.lg),
+    return BlocConsumer<DiscoveryBloc, DiscoveryState>(
+      listenWhen: (previous, current) =>
+          previous.surfaceIds.length != current.surfaceIds.length ||
+          previous.isResponding != current.isResponding,
+      listener: (context, state) => _scrollToBottom(),
+      buildWhen: (previous, current) =>
+          previous.surfaceIds != current.surfaceIds ||
+          previous.isResponding != current.isResponding,
+      builder: (context, state) {
+        return ListView(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(HobItSpacing.lg),
+          children: [
+            const _AgentIntroMessage(),
+            const SizedBox(height: HobItSpacing.md),
+            const _SuggestionChips(),
+            if (state.surfaceIds.isNotEmpty) ...[
+              const SizedBox(height: HobItSpacing.lg),
+              for (final id in state.surfaceIds)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: HobItSpacing.md),
+                  child: Surface(
+                    surfaceContext: hobbyConversation.host.contextFor(id),
+                  ),
+                ),
+            ],
+            if (state.isResponding) ...[
+              const SizedBox(height: HobItSpacing.sm),
+              const _TypingIndicator(),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// A "hob-it is thinking" bubble shown while the agent streams a response.
+///
+/// Mirrors the styling of [_AgentIntroMessage] so the feed reads as one
+/// conversation.
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _AgentIntroMessage(),
-        // const SizedBox(height: HobItSpacing.md),
-        // const _SuggestionChips(),
-        if (surfaceIds.isNotEmpty) ...[
-          const SizedBox(height: HobItSpacing.lg),
-          ...surfaceIds.map(
-            (id) => Padding(
-              padding: const EdgeInsets.only(bottom: HobItSpacing.md),
-              child: Surface(
-                surfaceContext: hobbyConversation.host.contextFor(id),
-              ),
+        Container(
+          width: 32,
+          height: 32,
+          decoration: const BoxDecoration(
+            color: HobItColors.blue,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.explore_rounded,
+            color: HobItColors.white,
+            size: 16,
+          ),
+        ),
+        const SizedBox(width: HobItSpacing.sm),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: HobItSpacing.md,
+            vertical: HobItSpacing.smd,
+          ),
+          decoration: const BoxDecoration(
+            color: HobItColors.navy,
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(16),
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(16),
             ),
           ),
-        ],
+          child: const _TypingDots(),
+        ),
       ],
+    );
+  }
+}
+
+/// Three dots that pulse in a wave to suggest the agent is working.
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final phase = _controller.value * 2 * math.pi - i * 0.9;
+            final opacity = 0.4 + 0.5 * (0.5 + 0.5 * math.sin(phase));
+            return Padding(
+              padding: EdgeInsets.only(right: i < 2 ? HobItSpacing.xs : 0),
+              child: Opacity(
+                opacity: opacity,
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: HobItColors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

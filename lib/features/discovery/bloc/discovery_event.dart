@@ -66,3 +66,11 @@ final class _DiscoverySurfaceRemoved extends DiscoveryEvent {
   @override
   List<Object> get props => [surfaceId];
 }
+
+/// Fired internally when the agent streams a chunk of its response.
+///
+/// Used by [DiscoveryBloc] to flip [DiscoveryState.isResponding] on so the
+/// feed can show a typing indicator. Not dispatched by the UI.
+final class _DiscoveryAgentChunkReceived extends DiscoveryEvent {
+  const _DiscoveryAgentChunkReceived();
+}
