@@ -1,5 +1,37 @@
 part of 'discovery_bloc.dart';
 
+/// A single entry in the discovery conversation feed.
+///
+/// Sealed so the view can switch exhaustively over user messages and
+/// agent-generated surfaces.
+sealed class DiscoveryFeedItem extends Equatable {
+  const DiscoveryFeedItem();
+}
+
+/// A message the user typed or selected, shown as a right-aligned bubble.
+final class UserMessageItem extends DiscoveryFeedItem {
+  /// Creates a [UserMessageItem].
+  const UserMessageItem(this.text);
+
+  /// The message text the user sent.
+  final String text;
+
+  @override
+  List<Object> get props => [text];
+}
+
+/// A generated agent surface, referenced by its GenUI surface ID.
+final class AgentSurfaceItem extends DiscoveryFeedItem {
+  /// Creates an [AgentSurfaceItem].
+  const AgentSurfaceItem(this.surfaceId);
+
+  /// The ID of the surface to render via the [SurfaceHost].
+  final String surfaceId;
+
+  @override
+  List<Object> get props => [surfaceId];
+}
+
 /// Describes the current phase of an onboarding agent request.
 enum DiscoveryStatus {
   /// No request has been made yet.
