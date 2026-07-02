@@ -15,12 +15,8 @@ part 'discovery_state.dart';
 /// translates GenUI surface events into [DiscoveryState] updates.
 class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
   /// Creates a [DiscoveryBloc].
-  DiscoveryBloc({
-    required HobbyConversation conversation,
-    required HobbyRepository hobbyRepository,
-  }) : _conversation = conversation,
-       _hobbyRepository = hobbyRepository,
-       super(const DiscoveryState()) {
+  DiscoveryBloc({required this._conversation, required this._hobbyRepository})
+    : super(const DiscoveryState()) {
     on<DiscoveryHobbyInputChanged>(_onHobbyInputChanged);
     on<DiscoverySubmitted>(_onSubmitted);
     on<_DiscoverySurfaceAdded>(_onSurfaceAdded);
@@ -28,11 +24,19 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     on<_DiscoveryAgentChunkReceived>(_onAgentChunkReceived);
     on<_DiscoveryStepsGenerated>(_onStepsGenerated);
     on<_DiscoveryStepToggled>(_onStepToggled);
+    // in the constructor, alongside the other subscriptions:
+    on<_DiscoveryHobbiesUpdated>(_onHobbiesUpdated);
+
+    _hobbiesSubscription = _hobbyRepository.watchHobbies().listen(
+      (hobbies) => add(_DiscoveryHobbiesUpdated(hobbies)),
+    );
 
     _progressSubscription = _conversation.progressActions.listen((event) {
       switch (event.name) {
         case 'roadmapGenerated':
-          add(_DiscoveryStepsGenerated(_stepsFromContext(event.context)));
+          add(
+            _DiscoveryStepsGenerated(steps: _stepsFromContext(event.context)),
+          );
         case 'roadmapStepToggled':
           add(
             _DiscoveryStepToggled(
@@ -62,8 +66,10 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
   final HobbyConversation _conversation;
   final HobbyRepository _hobbyRepository;
 
+  late final StreamSubscription<List<Hobby>> _hobbiesSubscription;
   late final StreamSubscription<SurfaceUpdate> _conversationSubscription;
   late final StreamSubscription<String> _textSubscription;
+  late final StreamSubscription<SurfaceProgressEvent> _progressSubscription;
 
   /// Exposes the [HobbyConversation] so the view can pass its host to
   /// [Surface] widgets.
@@ -79,8 +85,6 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     emit(state.copyWith(hobbyInput: event.input));
   }
 
-  late final StreamSubscription<SurfaceProgressEvent> _progressSubscription;
-
   List<JourneyStep> _stepsFromContext(Map<String, dynamic> context) {
     final raw = (context['steps'] as List?) ?? const [];
     return raw.map((entry) {
@@ -89,8 +93,39 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
         id: map['id'] as String,
         title: map['title'] as String,
         category: (map['category'] as String? ?? 'gear').trim().toLowerCase(),
+        dependsOn: ((map['dependsOn'] as List?) ?? const [])
+            .map((e) => e as String)
+            .toList(),
       );
     }).toList();
+  }
+
+  /// Mirrors the current hobby's completed step ids into state so the roadmap
+  /// can display persisted progress.
+  void _onHobbiesUpdated(
+    _DiscoveryHobbiesUpdated event,
+    Emitter<DiscoveryState> emit,
+  ) {
+    final id = state.hobbyId;
+    if (id == null) return;
+
+    Hobby? hobby;
+    for (final candidate in event.hobbies) {
+      if (candidate.id == id) {
+        hobby = candidate;
+        break;
+      }
+    }
+    if (hobby == null) return;
+
+    emit(
+      state.copyWith(
+        completedStepIds: {
+          for (final step in hobby.steps)
+            if (step.isComplete) step.id,
+        },
+      ),
+    );
   }
 
   Future<void> _onStepsGenerated(
@@ -199,6 +234,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     await _conversationSubscription.cancel();
     await _textSubscription.cancel();
     await _progressSubscription.cancel();
+    await _hobbiesSubscription.cancel();
     _conversation.dispose();
     return super.close();
   }

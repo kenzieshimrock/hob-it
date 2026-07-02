@@ -88,7 +88,6 @@ class _DiscoveryFeedState extends State<_DiscoveryFeed> {
   @override
   Widget build(BuildContext context) {
     final hobbyConversation = context.read<DiscoveryBloc>().conversation;
-
     return BlocConsumer<DiscoveryBloc, DiscoveryState>(
       listenWhen: (previous, current) =>
           previous.items.length != current.items.length ||

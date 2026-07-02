@@ -79,8 +79,35 @@ class HobbyRepository {
     if (row == null) return;
 
     final hobby = Hobby.fromJson(row);
+
+    // No structural change (same ids/titles/categories/prerequisites) means a
+    // re-announcement, e.g. after scrolling. Skip to preserve updatedAt and
+    // avoid a redundant write.
+    if (_sameStructure(hobby.steps, steps)) return;
+
+    final done = {
+      for (final step in hobby.steps)
+        if (step.isComplete) step.id,
+    };
+    final merged = [
+      for (final step in steps)
+        done.contains(step.id) ? step.copyWith(isComplete: true) : step,
+    ];
+
     await _hobbyApi.saveHobby(
-      hobby.copyWith(steps: steps, updatedAt: DateTime.now()).toJson(),
+      hobby.copyWith(steps: merged, updatedAt: DateTime.now()).toJson(),
     );
+  }
+
+  bool _sameStructure(List<JourneyStep> a, List<JourneyStep> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      // Compare everything except completion.
+      if (a[i].copyWith(isComplete: false) !=
+          b[i].copyWith(isComplete: false)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

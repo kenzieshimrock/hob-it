@@ -11,6 +11,9 @@ JourneyStep _$JourneyStepFromJson(Map<String, dynamic> json) => JourneyStep(
   title: json['title'] as String,
   category: _normalizeCategory(json['category'] as String),
   isComplete: json['isComplete'] as bool? ?? false,
+  dependsOn:
+      (json['dependsOn'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      [],
 );
 
 Map<String, dynamic> _$JourneyStepToJson(JourneyStep instance) =>
@@ -19,4 +22,5 @@ Map<String, dynamic> _$JourneyStepToJson(JourneyStep instance) =>
       'title': instance.title,
       'category': instance.category,
       'isComplete': instance.isComplete,
+      'dependsOn': instance.dependsOn,
     };

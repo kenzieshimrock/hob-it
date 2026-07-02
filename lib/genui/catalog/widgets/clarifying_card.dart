@@ -4,6 +4,7 @@ import 'package:hob_it/ui/ui.dart';
 
 /// A single selectable option within a [ClarifyingCard].
 class ClarifyingOption {
+  /// Creates a [ClarifyingOption].
   const ClarifyingOption({required this.label, required this.value});
 
   /// The text shown to the user.
@@ -13,94 +14,92 @@ class ClarifyingOption {
   final String value;
 }
 
-/// A GenUI-rendered card that presents a clarifying question.
+/// A GenUI card that presents a clarifying question.
 ///
-/// Renders a question with selectable option tiles. When the user selects
-/// an option and taps Continue, dispatches a [UserActionEvent] named
-/// `clarifyingOptionsSelected` carrying the selected [ClarifyingOption.value]
-class ClarifyingCard extends StatefulWidget {
+/// The selected option is bound to this surface's DataModel at the relative
+/// `selected` path, so the choice survives the widget being disposed and
+/// rebuilt, for example when scrolled out of the feed. On Continue it
+/// dispatches a [UserActionEvent] named `clarifyingOptionsSelected`.
+class ClarifyingCard extends StatelessWidget {
   /// Creates a [ClarifyingCard].
   const ClarifyingCard({
-    super.key,
     required this.itemContext,
     required this.title,
-    this.subtitle,
     required this.options,
+    this.subtitle,
+    super.key,
   });
 
-  /// The GenUI item context used to dispatch selection events to the agent.
+  /// The GenUI item context used to dispatch events and reach the DataModel.
   final CatalogItemContext itemContext;
 
   /// The clarifying question shown at the top of the card.
   final String title;
 
-  /// Optional supporting context displayed below [title]
+  /// Optional supporting context displayed below [title].
   final String? subtitle;
 
-  /// The answer options the user can choose form.
+  /// The answer options the user can choose from.
   final List<ClarifyingOption> options;
 
-  @override
-  State<ClarifyingCard> createState() => _ClarifyingCardState();
-}
-
-class _ClarifyingCardState extends State<ClarifyingCard> {
-  String? _selectedValue;
-
-  void _onSelect(String value) {
-    setState(() {
-      _selectedValue = value;
-    });
-  }
-
-  void _onSubmit() {
-    if (_selectedValue == null) return;
-    widget.itemContext.dispatchEvent(
+  void _submit(String value) {
+    itemContext.dispatchEvent(
       UserActionEvent(
         name: 'clarifyingOptionsSelected',
-        sourceComponentId: widget.itemContext.id,
-        context: {'value': _selectedValue},
+        sourceComponentId: itemContext.id,
+        context: {'value': value},
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final dataContext = itemContext.dataContext;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(HobItSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('CLARIFYING', style: HobItTypography.agentLabel),
-            const SizedBox(height: HobItSpacing.sm),
-            Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
-            if (widget.subtitle != null) ...[
-              const SizedBox(height: HobItSpacing.xs),
-              Text(
-                widget.subtitle!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: HobItColors.navy.withValues(alpha: 0.6),
+        child: BoundString(
+          dataContext: dataContext,
+          value: const {'path': 'selected'},
+          builder: (context, selected) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('CLARIFYING', style: HobItTypography.agentLabel),
+                const SizedBox(height: HobItSpacing.sm),
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                if (subtitle != null) ...[
+                  const SizedBox(height: HobItSpacing.xs),
+                  Text(
+                    subtitle!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: HobItColors.navy.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: HobItSpacing.md),
+                ...options.map(
+                  (option) => _OptionTile(
+                    option: option,
+                    isSelected: selected == option.value,
+                    onTap: () =>
+                        dataContext.update(DataPath('selected'), option.value),
+                  ),
                 ),
-              ),
-            ],
-            const SizedBox(height: HobItSpacing.md),
-            ...widget.options.map(
-              (option) => _OptionTile(
-                option: option,
-                isSelected: _selectedValue == option.value,
-                onTap: () => _onSelect(option.value),
-              ),
-            ),
-            const SizedBox(height: HobItSpacing.md),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _selectedValue != null ? _onSubmit : null,
-                child: const Text('Continue'),
-              ),
-            ),
-          ],
+                const SizedBox(height: HobItSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: selected != null
+                        ? () => _submit(selected)
+                        : null,
+                    child: const Text('Continue'),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

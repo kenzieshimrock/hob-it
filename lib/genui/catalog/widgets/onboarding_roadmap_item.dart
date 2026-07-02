@@ -1,6 +1,5 @@
 import 'package:genui/genui.dart';
 import 'package:hob_it/genui/catalog/widgets/onboarding_roadmap.dart';
-import 'package:hob_it/ui/ui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 
 /// The GenUI [CatalogItem] registration for [OnboardingRoadmap].
@@ -38,6 +37,14 @@ final CatalogItem onboardingRoadmapItem = CatalogItem(
           required: ['title', 'category', 'order'],
         ),
       ),
+      'dependsOn': S.list(
+        description:
+            'Optional. The `order` numbers of steps that must be completed before '
+            'this one becomes available. Use ONLY for genuine prerequisites, such '
+            'as a license before buying gear. Leave empty for steps that can be '
+            'done anytime.',
+        items: S.integer(),
+      ),
     },
     required: ['hobbyName', 'steps'],
   ),
@@ -56,25 +63,31 @@ final CatalogItem onboardingRoadmapItem = CatalogItem(
   ],
   widgetBuilder: (itemContext) {
     final data = itemContext.data as Map<String, dynamic>;
+    final rawSteps = (data['steps'] as List<dynamic>)
+        .cast<Map<String, dynamic>>();
 
-    HobItCategory parseCategory(String raw) => switch (raw) {
-      'admin' => HobItCategory.admin,
-      'learn' => HobItCategory.learn,
-      'community' => HobItCategory.community,
-      _ => HobItCategory.gear,
+    // All valid ids, for fail-open dependency filtering.
+    final validIds = <String>{
+      for (final o in rawSteps) '${(o['order'] as num?)?.toInt() ?? 0}',
     };
 
-    final steps = (data['steps'] as List<dynamic>).map((raw) {
-      final o = raw as Map<String, dynamic>;
+    final steps = rawSteps.map((o) {
       final order = (o['order'] as num?)?.toInt() ?? 0;
+      final id = '$order';
+      final dependsOn = ((o['dependsOn'] as List?) ?? const [])
+          .map((e) => '${(e as num).toInt()}')
+          .where((dep) => dep != id && validIds.contains(dep))
+          .toList();
       return RoadmapStep(
-        id: '$order',
+        id: id,
         title: o['title'] as String,
         category: (o['category'] as String? ?? 'gear').trim().toLowerCase(),
         description: o['description'] as String?,
         order: order,
+        dependsOn: dependsOn,
       );
     }).toList()..sort((a, b) => a.order.compareTo(b.order));
+
     return OnboardingRoadmap(
       itemContext: itemContext,
       hobbyName: data['hobbyName'] as String,

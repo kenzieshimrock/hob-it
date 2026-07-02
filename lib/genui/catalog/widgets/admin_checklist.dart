@@ -13,68 +13,75 @@ class AdminTask {
     this.cost,
   });
 
-  /// The action the user must complete, e.g. "Pass the Technician exam".
+  /// The action the user must complete.
   final String task;
 
   /// Whether this task is mandatory before starting the hobby.
   final bool isRequired;
 
-  /// Optional URL with more detail, e.g. an exam-finder or registration page.
+  /// Optional URL with more detail.
   final String? link;
 
-  /// Optional human-readable time estimate, e.g. "2–3 hours".
+  /// Optional human-readable time estimate.
   final String? estimatedTime;
 
-  /// Optional cost string, e.g. r"$15".
+  /// Optional cost string.
   final String? cost;
 }
 
 /// A GenUI checklist of admin steps required before starting a hobby.
 ///
-/// Renders licenses, permits, exams, and registrations as checkable rows.
-/// Use before a StarterKit when a hobby is gated by admin steps. When the
-/// user taps the primary action, dispatches a [UserActionEvent] named
-/// `adminChecklistCompleted` carrying the labels of the checked tasks.
-class AdminChecklist extends StatefulWidget {
+/// Each task's checked state is bound to this surface's DataModel at a
+/// relative `checked.<index>` path. The DataModel outlives the widget, so
+/// the checks survive the widget being disposed and rebuilt, for example
+/// when scrolled out of the feed. No keep-alive needed.
+class AdminChecklist extends StatelessWidget {
   /// Creates an [AdminChecklist].
   const AdminChecklist({
     required this.itemContext,
     required this.title,
     required this.tasks,
+    this.roadmapStepId,
     super.key,
   });
 
-  /// The GenUI item context used to dispatch events to the agent.
+  /// The GenUI item context used to dispatch events and reach the DataModel.
   final CatalogItemContext itemContext;
 
-  /// The card headline, e.g. "Before you start: amateur radio".
+  /// The card headline.
   final String title;
 
   /// The administrative tasks to display.
   final List<AdminTask> tasks;
 
-  @override
-  State<AdminChecklist> createState() => _AdminChecklistState();
-}
+  /// The roadmap step this checklist completes, if started from one.
+  final String? roadmapStepId;
 
-class _AdminChecklistState extends State<AdminChecklist> {
-  final Set<int> _checked = {};
+  void _submit() {
+    final stepId = roadmapStepId;
+    if (stepId != null) {
+      itemContext.dispatchEvent(
+        UserActionEvent(
+          name: 'roadmapStepToggled',
+          sourceComponentId: itemContext.id,
+          context: {'stepId': stepId, 'isComplete': true},
+        ),
+      );
+      return;
+    }
 
-  void _toggle(int index) {
-    setState(() {
-      if (!_checked.add(index)) _checked.remove(index);
-    });
-  }
-
-  void _onSubmit() {
-    final completed = [
-      for (var i = 0; i < widget.tasks.length; i++)
-        if (_checked.contains(i)) widget.tasks[i].task,
-    ];
-    widget.itemContext.dispatchEvent(
+    // Standalone checklist: read the ticked tasks from the DataModel.
+    final completed = <String>[];
+    for (var i = 0; i < tasks.length; i++) {
+      final done =
+          itemContext.dataContext.getValue<bool>(DataPath('checked.$i')) ??
+          false;
+      if (done) completed.add(tasks[i].task);
+    }
+    itemContext.dispatchEvent(
       UserActionEvent(
         name: 'adminChecklistCompleted',
-        sourceComponentId: widget.itemContext.id,
+        sourceComponentId: itemContext.id,
         context: {'completed': completed},
       ),
     );
@@ -96,24 +103,21 @@ class _AdminChecklistState extends State<AdminChecklist> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'ADMIN',
-              style: HobItTypography.categoryLabel(HobItCategory.admin),
-            ),
+            Text('ADMIN', style: HobItTypography.categoryLabelFor('admin')),
             const SizedBox(height: HobItSpacing.xs),
-            Text(widget.title, style: textTheme.titleMedium),
+            Text(title, style: textTheme.titleMedium),
             const SizedBox(height: HobItSpacing.md),
-            for (var i = 0; i < widget.tasks.length; i++)
+            for (var i = 0; i < tasks.length; i++)
               _TaskRow(
-                task: widget.tasks[i],
-                isChecked: _checked.contains(i),
-                onToggle: () => _toggle(i),
+                task: tasks[i],
+                dataContext: itemContext.dataContext,
+                path: 'checked.$i',
               ),
             const SizedBox(height: HobItSpacing.sm),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _onSubmit,
+                onPressed: _submit,
                 child: const Text('Mark complete'),
               ),
             ),
@@ -124,20 +128,28 @@ class _AdminChecklistState extends State<AdminChecklist> {
   }
 }
 
-/// A single checkable row inside an [AdminChecklist].
+/// A single checkable row bound to the DataModel at [path].
 class _TaskRow extends StatelessWidget {
   const _TaskRow({
     required this.task,
-    required this.isChecked,
-    required this.onToggle,
+    required this.dataContext,
+    required this.path,
   });
 
   final AdminTask task;
-  final bool isChecked;
-  final VoidCallback onToggle;
+  final DataContext dataContext;
+  final String path;
 
   @override
   Widget build(BuildContext context) {
+    return BoundBool(
+      dataContext: dataContext,
+      value: {'path': path},
+      builder: (context, checked) => _row(context, isChecked: checked ?? false),
+    );
+  }
+
+  Widget _row(BuildContext context, {required bool isChecked}) {
     final textTheme = Theme.of(context).textTheme;
     final meta = [
       if (task.estimatedTime != null) task.estimatedTime!,
@@ -147,7 +159,7 @@ class _TaskRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: HobItSpacing.smd),
       child: InkWell(
-        onTap: onToggle,
+        onTap: () => dataContext.update(DataPath(path), !isChecked),
         borderRadius: BorderRadius.circular(HobItSpacing.radiusXs),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
