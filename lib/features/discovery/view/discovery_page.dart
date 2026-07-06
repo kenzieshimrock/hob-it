@@ -103,7 +103,6 @@ class _DiscoveryFeedState extends State<_DiscoveryFeed> {
           children: [
             const _AgentIntroMessage(),
             const SizedBox(height: HobItSpacing.md),
-            const _SuggestionChips(),
             if (state.items.isNotEmpty) ...[
               const SizedBox(height: HobItSpacing.lg),
               for (final item in state.items)
@@ -302,56 +301,6 @@ class _AgentIntroMessage extends StatelessWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(color: HobItColors.white),
             ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Horizontally scrolling suggestion chips of common starting points.
-class _SuggestionChips extends StatelessWidget {
-  const _SuggestionChips();
-
-  static const List<String> _suggestions = [
-    'Beekeeping',
-    'Home brewing',
-    'Ceramics',
-    'Film photography',
-    'Rock climbing',
-    'Keyboards',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('OR TAP A STARTING POINT', style: HobItTypography.agentLabel),
-        const SizedBox(height: HobItSpacing.sm),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _suggestions
-                .map(
-                  (label) => Padding(
-                    padding: const EdgeInsets.only(right: HobItSpacing.sm),
-                    child: ActionChip(
-                      avatar: const Icon(
-                        Icons.add,
-                        size: 14,
-                        color: HobItColors.navy,
-                      ),
-                      label: Text(label),
-                      onPressed: () {
-                        context.read<DiscoveryBloc>()
-                          ..add(DiscoveryHobbyInputChanged(label))
-                          ..add(const DiscoverySubmitted());
-                      },
-                    ),
-                  ),
-                )
-                .toList(),
           ),
         ),
       ],
