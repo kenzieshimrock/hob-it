@@ -10,6 +10,7 @@ class StarterKitItem {
     this.description,
     this.estimatedCost,
     this.priority = StarterKitPriority.essential,
+    this.roadmapStepId,
   });
 
   /// The display name of the item.
@@ -23,6 +24,9 @@ class StarterKitItem {
 
   /// How important this item is for getting started.
   final StarterKitPriority priority;
+
+  /// The roadmap step this checklist completes, if it was started from one.
+  final String? roadmapStepId;
 }
 
 /// Priority tier for a [StarterKitItem].
@@ -50,6 +54,7 @@ class StarterKitWidget extends StatelessWidget {
     required this.items,
     this.subtitle,
     this.totalEstimate,
+    this.roadmapStepId,
     super.key,
   });
 
@@ -68,14 +73,21 @@ class StarterKitWidget extends StatelessWidget {
   /// Optional total cost estimate shown in the footer.
   final String? totalEstimate;
 
+  /// The roadmap step this checklist completes, if it was started from one.
+  final String? roadmapStepId;
+
   void _submit() {
-    itemContext.dispatchEvent(
-      UserActionEvent(
-        name: 'starterKitAccepted',
-        sourceComponentId: itemContext.id,
-        context: const {},
-      ),
-    );
+    final stepId = roadmapStepId;
+
+    if (stepId != null) {
+      itemContext.dispatchEvent(
+        UserActionEvent(
+          name: 'starterKitAccepted',
+          sourceComponentId: itemContext.id,
+          context: const {},
+        ),
+      );
+    }
   }
 
   @override

@@ -77,7 +77,7 @@ final class _DiscoveryAgentChunkReceived extends DiscoveryEvent {
 
 /// Fired internally when the agent's roadmap surface announces its steps.
 final class _DiscoveryStepsGenerated extends DiscoveryEvent {
-  const _DiscoveryStepsGenerated(this.steps);
+  const _DiscoveryStepsGenerated({required this.steps});
 
   final List<JourneyStep> steps;
 
@@ -94,4 +94,14 @@ final class _DiscoveryStepToggled extends DiscoveryEvent {
 
   @override
   List<Object> get props => [stepId, isComplete];
+}
+
+/// Fired internally when the repository's hobby list changes.
+final class _DiscoveryHobbiesUpdated extends DiscoveryEvent {
+  const _DiscoveryHobbiesUpdated(this.hobbies);
+
+  final List<Hobby> hobbies;
+
+  @override
+  List<Object> get props => [hobbies];
 }

@@ -46,6 +46,12 @@ final CatalogItem starterKitCatalogItem = CatalogItem(
             r'Total cost range across all items, e.g. "$150–250". '
             'Omit if not applicable.',
       ),
+      'roadmapStepId': S.string(
+        description:
+            'Optional. The id of the roadmap step this checklist completes. '
+            'Set it to the started step id so finishing the checklist marks that '
+            'step done on the roadmap.',
+      ),
     },
     required: ['title', 'items'],
   ),
@@ -86,6 +92,7 @@ final CatalogItem starterKitCatalogItem = CatalogItem(
     }).toList();
 
     return StarterKitWidget(
+      roadmapStepId: data['roadmapStepId'] as String?,
       itemContext: itemContext,
       title: data['title'] as String,
       subtitle: data['subtitle'] as String?,

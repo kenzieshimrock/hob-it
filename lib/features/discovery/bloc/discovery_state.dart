@@ -60,6 +60,7 @@ final class DiscoveryState extends Equatable {
     this.items = const [],
     this.isResponding = false,
     this.hobbyId,
+    this.completedStepIds = const {},
   });
 
   /// Whether the agent is currently streaming a response.
@@ -83,6 +84,9 @@ final class DiscoveryState extends Equatable {
   /// the first message is sent.
   final String? hobbyId;
 
+  /// Ids of the current hobby's completed steps, mirrored from the repository.
+  final Set<String> completedStepIds;
+
   /// Returns a copy of this state with the given fields replaced.
   DiscoveryState copyWith({
     DiscoveryStatus? status,
@@ -90,6 +94,7 @@ final class DiscoveryState extends Equatable {
     List<DiscoveryFeedItem>? items,
     bool? isResponding,
     String? hobbyId,
+    Set<String>? completedStepIds,
   }) {
     return DiscoveryState(
       status: status ?? this.status,
@@ -97,9 +102,17 @@ final class DiscoveryState extends Equatable {
       items: items ?? this.items,
       isResponding: isResponding ?? this.isResponding,
       hobbyId: hobbyId ?? this.hobbyId,
+      completedStepIds: completedStepIds ?? this.completedStepIds,
     );
   }
 
   @override
-  List<Object?> get props => [status, hobbyInput, items, isResponding, hobbyId];
+  List<Object?> get props => [
+    status,
+    hobbyInput,
+    items,
+    isResponding,
+    hobbyId,
+    completedStepIds,
+  ];
 }
