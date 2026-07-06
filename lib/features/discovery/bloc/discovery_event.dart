@@ -105,3 +105,7 @@ final class _DiscoveryHobbiesUpdated extends DiscoveryEvent {
   @override
   List<Object> get props => [hobbies];
 }
+
+final class _DiscoverySurfaceUpdated extends DiscoveryEvent {
+  const _DiscoverySurfaceUpdated();
+}

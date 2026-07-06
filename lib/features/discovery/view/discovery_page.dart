@@ -66,20 +66,20 @@ class _DiscoveryFeed extends StatefulWidget {
 }
 
 class _DiscoveryFeedState extends State<_DiscoveryFeed> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _controller = ScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+      if (!mounted || !_controller.hasClients) return;
+      _controller.animateTo(
+        _controller.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
     });
@@ -88,17 +88,19 @@ class _DiscoveryFeedState extends State<_DiscoveryFeed> {
   @override
   Widget build(BuildContext context) {
     final hobbyConversation = context.read<DiscoveryBloc>().conversation;
+
     return BlocConsumer<DiscoveryBloc, DiscoveryState>(
       listenWhen: (previous, current) =>
           previous.items.length != current.items.length ||
-          previous.isResponding != current.isResponding,
-      listener: (context, state) => _scrollToBottom(),
+          previous.isResponding != current.isResponding ||
+          previous.surfaceRevision != current.surfaceRevision,
+      listener: (context, _) => _scrollToBottom(),
       buildWhen: (previous, current) =>
           previous.items != current.items ||
           previous.isResponding != current.isResponding,
       builder: (context, state) {
         return ListView(
-          controller: _scrollController,
+          controller: _controller,
           padding: const EdgeInsets.all(HobItSpacing.lg),
           children: [
             const _AgentIntroMessage(),

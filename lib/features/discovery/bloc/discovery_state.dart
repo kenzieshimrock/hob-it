@@ -61,6 +61,7 @@ final class DiscoveryState extends Equatable {
     this.isResponding = false,
     this.hobbyId,
     this.completedStepIds = const {},
+    this.surfaceRevision = 0,
   });
 
   /// Whether the agent is currently streaming a response.
@@ -87,6 +88,10 @@ final class DiscoveryState extends Equatable {
   /// Ids of the current hobby's completed steps, mirrored from the repository.
   final Set<String> completedStepIds;
 
+  /// Increments whenever a surface's components change, so the feed can keep
+  /// scrolling as a surface streams in.
+  final int surfaceRevision;
+
   /// Returns a copy of this state with the given fields replaced.
   DiscoveryState copyWith({
     DiscoveryStatus? status,
@@ -95,6 +100,7 @@ final class DiscoveryState extends Equatable {
     bool? isResponding,
     String? hobbyId,
     Set<String>? completedStepIds,
+    int? surfaceRevision,
   }) {
     return DiscoveryState(
       status: status ?? this.status,
@@ -103,6 +109,7 @@ final class DiscoveryState extends Equatable {
       isResponding: isResponding ?? this.isResponding,
       hobbyId: hobbyId ?? this.hobbyId,
       completedStepIds: completedStepIds ?? this.completedStepIds,
+      surfaceRevision: surfaceRevision ?? this.surfaceRevision,
     );
   }
 
@@ -114,5 +121,6 @@ final class DiscoveryState extends Equatable {
     isResponding,
     hobbyId,
     completedStepIds,
+    surfaceRevision,
   ];
 }

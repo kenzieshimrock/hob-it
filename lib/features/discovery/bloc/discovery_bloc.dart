@@ -24,9 +24,19 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     on<_DiscoveryAgentChunkReceived>(_onAgentChunkReceived);
     on<_DiscoveryStepsGenerated>(_onStepsGenerated);
     on<_DiscoveryStepToggled>(_onStepToggled);
-    // in the constructor, alongside the other subscriptions:
     on<_DiscoveryHobbiesUpdated>(_onHobbiesUpdated);
+    on<_DiscoverySurfaceUpdated>(_onSurfaceUpdated);
 
+    _conversationSubscription = _conversation.surfaceUpdates.listen((update) {
+      switch (update) {
+        case SurfaceAdded(:final surfaceId):
+          add(_DiscoverySurfaceAdded(surfaceId));
+        case SurfaceRemoved(:final surfaceId):
+          add(_DiscoverySurfaceRemoved(surfaceId));
+        case ComponentsUpdated():
+          add(const _DiscoverySurfaceUpdated());
+      }
+    });
     _hobbiesSubscription = _hobbyRepository.watchHobbies().listen(
       (hobbies) => add(_DiscoveryHobbiesUpdated(hobbies)),
     );
@@ -54,7 +64,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
         case SurfaceRemoved(:final surfaceId):
           add(_DiscoverySurfaceRemoved(surfaceId));
         case ComponentsUpdated():
-          break;
+          add(const _DiscoverySurfaceUpdated());
       }
     });
 
@@ -227,6 +237,14 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
             .toList(),
       ),
     );
+  }
+
+  /// Fired when surfaces are updated.
+  void _onSurfaceUpdated(
+    _DiscoverySurfaceUpdated event,
+    Emitter<DiscoveryState> emit,
+  ) {
+    emit(state.copyWith(surfaceRevision: state.surfaceRevision + 1));
   }
 
   @override
