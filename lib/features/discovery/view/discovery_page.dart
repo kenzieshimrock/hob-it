@@ -66,20 +66,20 @@ class _DiscoveryFeed extends StatefulWidget {
 }
 
 class _DiscoveryFeedState extends State<_DiscoveryFeed> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _controller = ScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+      if (!mounted || !_controller.hasClients) return;
+      _controller.animateTo(
+        _controller.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
     });
@@ -88,22 +88,23 @@ class _DiscoveryFeedState extends State<_DiscoveryFeed> {
   @override
   Widget build(BuildContext context) {
     final hobbyConversation = context.read<DiscoveryBloc>().conversation;
+
     return BlocConsumer<DiscoveryBloc, DiscoveryState>(
       listenWhen: (previous, current) =>
           previous.items.length != current.items.length ||
-          previous.isResponding != current.isResponding,
-      listener: (context, state) => _scrollToBottom(),
+          previous.isResponding != current.isResponding ||
+          previous.surfaceRevision != current.surfaceRevision,
+      listener: (context, _) => _scrollToBottom(),
       buildWhen: (previous, current) =>
           previous.items != current.items ||
           previous.isResponding != current.isResponding,
       builder: (context, state) {
         return ListView(
-          controller: _scrollController,
+          controller: _controller,
           padding: const EdgeInsets.all(HobItSpacing.lg),
           children: [
             const _AgentIntroMessage(),
             const SizedBox(height: HobItSpacing.md),
-            const _SuggestionChips(),
             if (state.items.isNotEmpty) ...[
               const SizedBox(height: HobItSpacing.lg),
               for (final item in state.items)
@@ -302,56 +303,6 @@ class _AgentIntroMessage extends StatelessWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(color: HobItColors.white),
             ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Horizontally scrolling suggestion chips of common starting points.
-class _SuggestionChips extends StatelessWidget {
-  const _SuggestionChips();
-
-  static const List<String> _suggestions = [
-    'Beekeeping',
-    'Home brewing',
-    'Ceramics',
-    'Film photography',
-    'Rock climbing',
-    'Keyboards',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('OR TAP A STARTING POINT', style: HobItTypography.agentLabel),
-        const SizedBox(height: HobItSpacing.sm),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _suggestions
-                .map(
-                  (label) => Padding(
-                    padding: const EdgeInsets.only(right: HobItSpacing.sm),
-                    child: ActionChip(
-                      avatar: const Icon(
-                        Icons.add,
-                        size: 14,
-                        color: HobItColors.navy,
-                      ),
-                      label: Text(label),
-                      onPressed: () {
-                        context.read<DiscoveryBloc>()
-                          ..add(DiscoveryHobbyInputChanged(label))
-                          ..add(const DiscoverySubmitted());
-                      },
-                    ),
-                  ),
-                )
-                .toList(),
           ),
         ),
       ],

@@ -19,7 +19,6 @@ class HobbyConversation {
   /// Creates a [HobbyConversation] and initializes the GenUI pipeline.
   HobbyConversation() {
     _adapter = A2uiTransportAdapter();
-
     final catalog = BasicCatalogItems.asCatalog().copyWith(
       newItems: [
         adminChecklistItem,
@@ -27,6 +26,7 @@ class HobbyConversation {
         starterKitCatalogItem,
         gearCardItem,
         onboardingRoadmapItem,
+        resourceCardItem,
       ],
     );
     _surfaceController = SurfaceController(catalogs: [catalog]);
@@ -89,8 +89,8 @@ Respond to them as follows:
   fits that step.
   - gear: a StarterKit for a full kit, or a GearCard for one key item.
   - admin: an AdminChecklist of licenses, permits, or exams.
-  - learn or community: a ClarifyingCard to narrow the need, then the most
-    useful card you can build from the catalog.
+  - learn or community: a ResourceCard of apps, courses, videos,
+    communities, and books.
 - clarifyingOptionsSelected: use the selected value to continue the flow.
 
 Sequencing: when a hobby is gated by admin steps, such as a license or
