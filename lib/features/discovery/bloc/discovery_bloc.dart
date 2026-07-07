@@ -57,17 +57,6 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       }
     });
 
-    _conversationSubscription = _conversation.surfaceUpdates.listen((update) {
-      switch (update) {
-        case SurfaceAdded(:final surfaceId):
-          add(_DiscoverySurfaceAdded(surfaceId));
-        case SurfaceRemoved(:final surfaceId):
-          add(_DiscoverySurfaceRemoved(surfaceId));
-        case ComponentsUpdated():
-          add(const _DiscoverySurfaceUpdated());
-      }
-    });
-
     _textSubscription = _conversation.incomingText.listen(
       (_) => add(const _DiscoveryAgentChunkReceived()),
     );

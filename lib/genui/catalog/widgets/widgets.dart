@@ -6,5 +6,7 @@ export 'gear_card.dart';
 export 'gear_card_item.dart';
 export 'onboarding_roadmap.dart';
 export 'onboarding_roadmap_item.dart';
+export 'resource_card.dart';
+export 'resource_card_item.dart';
 export 'starter_kit.dart';
 export 'starter_kit_catalog_item.dart';
