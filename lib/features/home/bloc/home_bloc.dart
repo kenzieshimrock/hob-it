@@ -18,11 +18,9 @@ part 'home_state.dart';
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// Creates a [HomeBloc].
   HomeBloc({
-    required HomeConversation homeConversation,
-    required HobbyRepository hobbyRepository,
-  }) : _homeConversation = homeConversation,
-       _hobbyRepository = hobbyRepository,
-       super(const HomeState()) {
+    required this._homeConversation,
+    required this._hobbyRepository,
+  }) : super(const HomeState()) {
     on<HomeStarted>(_onStarted);
     on<HomeRefreshRequested>(_onRefreshRequested);
     on<_HomeSurfaceAdded>(_onSurfaceAdded);
@@ -76,7 +74,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     try {
       await _homeConversation.generateFeed(_summarize(hobbies));
       emit(state.copyWith(status: HomeStatus.ready));
-    } catch (e) {
+    } on Exception catch (_) {
       emit(state.copyWith(status: HomeStatus.failure));
     }
   }
