@@ -4,28 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart';
 import 'package:hob_it/features/discovery/bloc/discovery_bloc.dart';
-import 'package:hob_it/genui/hobby_conversation.dart';
 import 'package:hob_it/ui/ui.dart';
-import 'package:hobby_repository/hobby_repository.dart';
 
-/// The Discover tab — entry point for starting a new hobby discovery.
-///
-/// Provides [DiscoveryBloc] to the widget subtree and delegates rendering to
-/// [DiscoveryView]. Reads the app-provided [HobbyRepository].
+/// The Discover tab. The [DiscoveryBloc] is provided at app scope, so this
+/// is just the view.
 class DiscoveryPage extends StatelessWidget {
   /// Creates a [DiscoveryPage].
   const DiscoveryPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => DiscoveryBloc(
-        conversation: HobbyConversation(),
-        hobbyRepository: context.read<HobbyRepository>(),
-      ),
-      child: const DiscoveryView(),
-    );
-  }
+  Widget build(BuildContext context) => const DiscoveryView();
 }
 
 /// The visual layer of the Discover tab.
