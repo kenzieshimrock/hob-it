@@ -8,7 +8,7 @@ sealed class DiscoveryEvent extends Equatable {
   const DiscoveryEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 /// Fired when the user updates the hobby input field.
@@ -108,4 +108,29 @@ final class _DiscoveryHobbiesUpdated extends DiscoveryEvent {
 
 final class _DiscoverySurfaceUpdated extends DiscoveryEvent {
   const _DiscoverySurfaceUpdated();
+}
+
+/// Fired to start a brand-new discovery session, optionally with a first
+/// message to send immediately (example: the hobby from a pivot).
+final class DiscoveryNewSessionRequested extends DiscoveryEvent {
+  /// Creates a [DiscoveryNewSessionRequested] event.
+  const DiscoveryNewSessionRequested({this.seedInput});
+
+  /// The first message to send immediately after starting the new session.
+  final String? seedInput;
+
+  @override
+  List<Object?> get props => [seedInput];
+}
+
+/// Fired to open (resume) a saved hobby in the Discover tab.
+final class DiscoveryHobbyOpened extends DiscoveryEvent {
+  /// Creates a [DiscoveryHobbyOpened] event for the given [hobbyId].
+  const DiscoveryHobbyOpened(this.hobbyId);
+
+  /// The ID of the hobby to resume.
+  final String hobbyId;
+
+  @override
+  List<Object> get props => [hobbyId];
 }

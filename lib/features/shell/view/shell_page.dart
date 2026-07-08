@@ -26,7 +26,7 @@ class ShellPage extends StatelessWidget {
         BlocProvider(create: (_) => ShellTabCubit()),
         BlocProvider(
           create: (context) => DiscoveryBloc(
-            conversation: HobbyConversation(),
+            conversationFactory: HobbyConversation.new,
             hobbyRepository: context.read<HobbyRepository>(),
           ),
         ),
