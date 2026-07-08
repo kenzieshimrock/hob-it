@@ -133,15 +133,6 @@ Keep every response focused, hobby-specific, and rendered as UI.
   /// generated UI surfaces.
   SurfaceHost get host => _surfaceController;
 
-  /// Sends [userMessage] to the agent as a plain human turn.
-  ///
-  /// Appends the message to history and triggers an agent response.
-  Future<void> sendRequest(String userMessage) async {
-    _history.add(dartantic.ChatMessage.user(userMessage));
-
-    await _streamAgentResponse();
-  }
-
   final StreamController<SurfaceProgressEvent> _progressController =
       StreamController<SurfaceProgressEvent>.broadcast();
 
@@ -154,6 +145,15 @@ Keep every response focused, hobby-specific, and rendered as UI.
     'roadmapGenerated',
     'roadmapStepToggled',
   };
+
+  /// Sends [userMessage] to the agent as a plain human turn.
+  ///
+  /// Appends the message to history and triggers an agent response.
+  Future<void> sendRequest(String userMessage) async {
+    _history.add(dartantic.ChatMessage.user(userMessage));
+
+    await _streamAgentResponse();
+  }
 
   /// Handles a [ChatMessage] emitted by [SurfaceController.onSubmit].
   ///

@@ -110,4 +110,18 @@ class HobbyRepository {
     }
     return true;
   }
+
+  /// A short natural-language summary of the user's hobbies and progress,
+  /// used to seed the home feed prompt.
+  String memorySummary(List<Hobby> hobbies) {
+    final lines = hobbies
+        .map((hobby) {
+          final progress = hobby.totalCount == 0
+              ? 'not started'
+              : '${hobby.completedCount} of ${hobby.totalCount} steps done';
+          return '- ${hobby.name}: $progress';
+        })
+        .join('\n');
+    return 'The user has explored these hobbies:\n$lines';
+  }
 }

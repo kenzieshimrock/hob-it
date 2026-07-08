@@ -39,6 +39,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     });
     _hobbiesSubscription = _hobbyRepository.watchHobbies().listen(
       (hobbies) => add(_DiscoveryHobbiesUpdated(hobbies)),
+      onError: addError,
     );
 
     _progressSubscription = _conversation.progressActions.listen((event) {
@@ -160,7 +161,6 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     if (message.isEmpty) return;
     if (state.status == DiscoveryStatus.loading) return;
 
-    // The first message of the session starts a new persisted hobby.
     var hobbyId = state.hobbyId;
     if (hobbyId == null) {
       hobbyId = _generateId();
@@ -180,9 +180,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     );
 
     try {
-      _conversation.sendRequest(message);
+      await _conversation.sendRequest(message);
       emit(state.copyWith(status: DiscoveryStatus.success));
-    } catch (e) {
+    } catch (_) {
       emit(
         state.copyWith(status: DiscoveryStatus.failure, isResponding: false),
       );

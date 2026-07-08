@@ -1,18 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hob_it/features/discovery/bloc/discovery_bloc.dart';
 import 'package:hob_it/features/discovery/view/discovery_page.dart';
 import 'package:hob_it/features/hobbies/hobbies.dart';
 import 'package:hob_it/features/home/view/home_page.dart';
 import 'package:hob_it/features/settings/settings.dart';
 import 'package:hob_it/features/shell/cubit/shell_tab_cubit.dart';
+import 'package:hob_it/genui/hobby_conversation.dart';
 import 'package:hob_it/ui/ui.dart';
+import 'package:hobby_repository/hobby_repository.dart';
 
 /// Root shell that owns the bottom navigation bar.
 ///
-/// Reads the selected tab from [ShellTabCubit] so other tabs can switch it.
+/// Provides the shell-scoped [ShellTabCubit] and the shared [DiscoveryBloc]
+/// (so any tab can open and drive Discover), then renders the tabbed
+/// scaffold via [_ShellView].
 class ShellPage extends StatelessWidget {
   /// Creates a [ShellPage].
   const ShellPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ShellTabCubit()),
+        BlocProvider(
+          create: (context) => DiscoveryBloc(
+            conversation: HobbyConversation(),
+            hobbyRepository: context.read<HobbyRepository>(),
+          ),
+        ),
+      ],
+      child: const _ShellView(),
+    );
+  }
+}
+
+/// The visual layer of the shell: an app bar, an [IndexedStack] of tab pages,
+/// and a bottom [NavigationBar] driven by [ShellTabCubit].
+class _ShellView extends StatelessWidget {
+  const _ShellView();
 
   static const List<_TabItem> _tabs = [
     _TabItem(
@@ -50,8 +77,9 @@ class ShellPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ShellTabCubit, int>(
-      builder: (context, currentIndex) {
+    return BlocBuilder<ShellTabCubit, ShellTab>(
+      builder: (context, tab) {
+        final index = tab.index;
         return Scaffold(
           appBar: AppBar(
             backgroundColor: HobItColors.scaffold,
@@ -85,7 +113,7 @@ class ShellPage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: HobItSpacing.md),
                 child: Text(
-                  _tabs[currentIndex].tagLabel,
+                  _tabs[index].tagLabel,
                   style: HobItTypography.agentLabel,
                 ),
               ),
@@ -99,13 +127,13 @@ class ShellPage extends StatelessWidget {
               ),
             ),
           ),
-          body: IndexedStack(index: currentIndex, children: _pages),
+          body: IndexedStack(index: index, children: _pages),
           bottomNavigationBar: NavigationBar(
             backgroundColor: HobItColors.scaffold,
             indicatorColor: HobItColors.blue20,
-            selectedIndex: currentIndex,
-            onDestinationSelected: (index) =>
-                context.read<ShellTabCubit>().select(index),
+            selectedIndex: index,
+            onDestinationSelected: (i) =>
+                context.read<ShellTabCubit>().select(ShellTab.values[i]),
             destinations: _tabs
                 .map(
                   (tab) => NavigationDestination(
@@ -131,8 +159,15 @@ class _TabItem {
     required this.tagLabel,
   });
 
+  /// Display label shown in the bottom bar.
   final String label;
+
+  /// Icon shown when the tab is inactive.
   final IconData icon;
+
+  /// Icon shown when the tab is active.
   final IconData activeIcon;
+
+  /// Amber uppercase tag shown in the app bar when this tab is active.
   final String tagLabel;
 }

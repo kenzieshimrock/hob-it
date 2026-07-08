@@ -17,10 +17,8 @@ part 'home_state.dart';
 /// new user (empty state), which protects the agent's rate limit.
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// Creates a [HomeBloc].
-  HomeBloc({
-    required this._homeConversation,
-    required this._hobbyRepository,
-  }) : super(const HomeState()) {
+  HomeBloc({required this._homeConversation, required this._hobbyRepository})
+    : super(const HomeState()) {
     on<HomeStarted>(_onStarted);
     on<HomeRefreshRequested>(_onRefreshRequested);
     on<_HomeSurfaceAdded>(_onSurfaceAdded);
@@ -72,23 +70,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _generated = true;
     emit(state.copyWith(status: HomeStatus.loading));
     try {
-      await _homeConversation.generateFeed(_summarize(hobbies));
+      await _homeConversation.generateFeed(
+        _hobbyRepository.memorySummary(hobbies),
+      );
       emit(state.copyWith(status: HomeStatus.ready));
     } on Exception catch (_) {
       emit(state.copyWith(status: HomeStatus.failure));
     }
-  }
-
-  String _summarize(List<Hobby> hobbies) {
-    final lines = hobbies
-        .map((hobby) {
-          final progress = hobby.totalCount == 0
-              ? 'not started'
-              : '${hobby.completedCount} of ${hobby.totalCount} steps done';
-          return '- ${hobby.name}: $progress';
-        })
-        .join('\n');
-    return 'The user has explored these hobbies:\n$lines';
   }
 
   void _onSurfaceAdded(_HomeSurfaceAdded event, Emitter<HomeState> emit) {

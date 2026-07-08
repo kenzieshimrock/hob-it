@@ -1,28 +1,29 @@
 import 'package:bloc/bloc.dart';
 
-/// Holds the selected bottom-navigation tab for the shell.
-///
-/// App-scoped so any tab can switch the shell, e.g. Home or Hobbies opening
-/// the Discover tab.
-class ShellTabCubit extends Cubit<int> {
+/// The bottom-navigation tabs of the shell.
+enum ShellTab {
+  /// Home Tab
+  home,
+
+  /// Discover Tab
+  discover,
+
+  /// Hobbies Tab
+  hobbies,
+
+  /// Settings Tab
+  settings,
+}
+
+/// Holds the selected shell tab so any tab can switch the shell, e.g. Home or
+/// Hobbies opening the Discover tab.
+class ShellTabCubit extends Cubit<ShellTab> {
   /// Creates a [ShellTabCubit] starting on Home.
-  ShellTabCubit() : super(homeTab);
+  ShellTabCubit() : super(ShellTab.home);
 
-  /// Home tab index.
-  static const int homeTab = 0;
-
-  /// Discover tab index.
-  static const int discoverTab = 1;
-
-  /// Hobbies tab index.
-  static const int hobbiesTab = 2;
-
-  /// Settings tab index.
-  static const int settingsTab = 3;
-
-  /// Selects the tab at [index].
-  void select(int index) => emit(index);
+  /// Selects [tab].
+  void select(ShellTab tab) => emit(tab);
 
   /// Switches to the Discover tab.
-  void openDiscover() => emit(discoverTab);
+  void openDiscover() => emit(ShellTab.discover);
 }
