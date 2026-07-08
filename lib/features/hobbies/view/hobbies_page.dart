@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hob_it/features/hobbies/bloc/hobbies_bloc.dart';
+import 'package:hob_it/features/features.dart';
 import 'package:hob_it/ui/ui.dart';
 import 'package:hobby_repository/hobby_repository.dart';
 
@@ -97,11 +97,12 @@ class _HobbyCard extends StatelessWidget {
               children: [
                 Expanded(child: Text(hobby.name, style: textTheme.titleMedium)),
                 TextButton(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Resuming a hobby is coming soon.'),
-                    ),
-                  ),
+                  onPressed: () {
+                    context.read<DiscoveryBloc>().add(
+                      DiscoveryHobbyOpened(hobby.id),
+                    );
+                    context.read<ShellTabCubit>().openDiscover();
+                  },
                   child: const Text('Open'),
                 ),
               ],

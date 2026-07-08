@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:genui/genui.dart';
+import 'package:hob_it/features/features.dart';
 import 'package:hob_it/features/home/bloc/home_bloc.dart';
 import 'package:hob_it/genui/home_conversation.dart';
 import 'package:hob_it/ui/ui.dart';
@@ -193,7 +194,10 @@ class _StartSomethingNewTile extends StatelessWidget {
           color: HobItColors.navy40,
         ),
         onTap: () {
-          // Wired to switch to the Discover tab in task 5 (shell navigation).
+          context.read<DiscoveryBloc>().add(
+            const DiscoveryNewSessionRequested(),
+          );
+          context.read<ShellTabCubit>().openDiscover();
         },
       ),
     );
