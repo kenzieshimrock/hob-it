@@ -51,6 +51,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
   late StreamSubscription<SurfaceProgressEvent> _progressSubscription;
   late StreamSubscription<String> _textSubscription;
   late final StreamSubscription<List<Hobby>> _hobbiesSubscription;
+  late final StreamSubscription<HobbySessionPivotEvent> _pivotSubscription;
 
   /// Exposes the current [HobbyConversation] so the view can render surfaces.
   HobbyConversation get conversation => _conversation;
@@ -106,11 +107,19 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     _textSubscription = _conversation.incomingText.listen(
       (_) => add(const _DiscoveryAgentChunkReceived()),
     );
+
+    // 4) Session pivot: the agent offered to start a new hobby session and
+    // the user accepted. Same handling as the Home "start something new"
+    // CTA — restart with the new hobby name as the seed.
+    _pivotSubscription = _conversation.newSessionRequests.listen((event) {
+      add(DiscoveryNewSessionRequested(seedInput: event.hobbyName));
+    });
   }
 
   // Cancel only the conversation-derived subscriptions. Called before we swap
   // in a new conversation and in close(), so we don't leak listeners.
   Future<void> _cancelConversationSubscriptions() async {
+    await _pivotSubscription.cancel();
     await _surfaceSubscription.cancel();
     await _progressSubscription.cancel();
     await _textSubscription.cancel();

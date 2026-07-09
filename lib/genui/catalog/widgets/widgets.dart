@@ -12,5 +12,7 @@ export 'recommended_hobby.dart';
 export 'recommended_hobby_item.dart';
 export 'resource_card.dart';
 export 'resource_card_item.dart';
+export 'start_new_session.dart';
+export 'start_new_session_item.dart';
 export 'starter_kit.dart';
 export 'starter_kit_catalog_item.dart';

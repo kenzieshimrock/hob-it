@@ -27,6 +27,7 @@ class HobbyConversation {
         gearCardItem,
         onboardingRoadmapItem,
         resourceCardItem,
+        startNewSessionItem,
       ],
     );
     _surfaceController = SurfaceController(catalogs: [catalog]);
@@ -101,6 +102,13 @@ When you generate a card in response to a roadmapStepStarted interaction,
 set that card's roadmapStepId to the started step's id (context.stepId),
 so completing the card marks the matching roadmap step done.
 
+Pivoting to a different hobby: if the user's message is about starting a
+completely different hobby rather than continuing this one — for example
+"actually, what about beekeeping?" mid-roadmap — respond with a
+StartNewSession card instead of continuing the current flow. Set
+hobbyName to the new hobby and write message to briefly acknowledge the
+pivot. Do not use this for a follow-up question about the current hobby.
+
 Keep every response focused, hobby-specific, and rendered as UI.
 
 ''';
@@ -132,6 +140,15 @@ Keep every response focused, hobby-specific, and rendered as UI.
   /// The [SurfaceHost] required by [Surface] widgets to render
   /// generated UI surfaces.
   SurfaceHost get host => _surfaceController;
+
+  final StreamController<HobbySessionPivotEvent> _newSessionController =
+      StreamController<HobbySessionPivotEvent>.broadcast();
+
+  /// Fired when the user accepts the agent's offer to start a news session
+  /// for a different hobby mid-conversation. NOT forwarded to the
+  /// agent. DiscoveryBloc turns this into a session restart.
+  Stream<HobbySessionPivotEvent> get newSessionRequests =>
+      _newSessionController.stream;
 
   final StreamController<SurfaceProgressEvent> _progressController =
       StreamController<SurfaceProgressEvent>.broadcast();
@@ -165,6 +182,16 @@ Keep every response focused, hobby-specific, and rendered as UI.
 
     if (interaction == null) {
       await sendRequest('[User submitted a UI interaction]');
+      return;
+    }
+
+    if (interaction.name == 'startNewSessionSelected') {
+      _newSessionController.add(
+        HobbySessionPivotEvent(
+          hobbyName: interaction.context['hobbyName'] as String? ?? '',
+        ),
+      );
+      // handled locally. Never sent to the agent.
       return;
     }
 
@@ -233,6 +260,7 @@ Keep every response focused, hobby-specific, and rendered as UI.
     _messageSub.cancel();
     _actionSub.cancel();
     _progressController.close();
+    _newSessionController.close();
     _adapter.dispose();
     _surfaceController.dispose();
   }
@@ -251,6 +279,18 @@ class SurfaceProgressEvent {
 
   /// The action payload.
   final Map<String, dynamic> context;
+}
+
+/// Fired when the user accepts a mid-conversation pivot to a new hobby.
+///
+/// Consumed by DiscoveryBloc to restart the session. Deliberately NOT
+/// forwarded to the agent.
+class HobbySessionPivotEvent {
+  /// Creates a [HobbySessionPivotEvent].
+  const HobbySessionPivotEvent({required this.hobbyName});
+
+  /// The hobby name to seed the new session with.
+  final String hobbyName;
 }
 
 class _ParsedInteraction {
